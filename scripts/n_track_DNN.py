@@ -26,6 +26,31 @@ data_agg['persistence'] = data_agg['total_displacement']/data_agg['sum_diff_xy_m
 # shows how directional the movement is
 
 
+'''
+example
+df1 = df.groupby("b").mean().cumsum()
+print (df1)
+   a
+b   
+1  2
+2  5
+
+df['a'] = df['b'].map(df1['a'])
+print (df)
+   a  b
+0  2  1
+1  2  1
+2  5  2
+3  5  2
+
+more example  df['sum_values_A'] = df.groupby('A')['values'].transform(np.sum)
+'''
+
+
+data_agg['f_mean_diff_xy_micron'] = data_agg.groupby('file')['mean_diff_xy_micron'].transform(np.max)
+# this is for masking then (fastest dot)
+
+
 
 
 ''' stratified cross-val K fold '''
