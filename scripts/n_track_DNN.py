@@ -46,6 +46,7 @@ data_agg['f_persistence'] = data_agg['f_total_displacement'] / data_agg['f_sum_d
 
 data_agg['file_mean_diff_xy_micron'] = data_agg.groupby('file')['f_mean_diff_xy_micron'].transform(np.max)
 data_agg['f_fastest_mask'] = np.where((data_agg['f_mean_diff_xy_micron'] == data_agg['file_mean_diff_xy_micron']), 1, 0)
+# DO NOT USE FOR guide AS TARGET (telo!)
 # the fastest (or the only available) dot in the nucleus is 1, the rest is 0
 
 data_agg['f_min_dist_range'] = data_agg['max_min_dist_micron']-data_agg['min_min_dist_micron']
@@ -53,5 +54,9 @@ data_agg['f_min_dist_range'] = data_agg['max_min_dist_micron']-data_agg['min_min
 data_agg['f_total_min_dist'] = data_agg['end_min_dist_micron']-data_agg['beg_min_dist_micron']
 # how distance changed within timelapse (frame29-frame0)
 
+data_agg['file_max_min_dist_micron'] = data_agg.groupby('file')['f_min_dist_micron'].transform(np.max)
+data_agg['f_most_central_mask'] = np.where((data_agg['f_min_dist_micron'] == data_agg['file_max_min_dist_micron']), 1, 0)
+# DO NOT USE FOR guide AS TARGET (telo!)
+# the most central (or the only available) dot in the nucleus is 1, the rest is 0
 
 ''' stratified cross-val K fold '''
