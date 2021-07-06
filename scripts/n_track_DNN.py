@@ -4,15 +4,19 @@ import numpy as np
 ''' read the data '''
 data = pd.read_csv('scripts/data_chromatin_live.csv')
 
-''' add features '''
-data_agg = data.groupby(['file', 'particle']).agg(guide=('guide', 'first'),
-                                                  time=('time', 'first'),
-                                                  serum_conc_percent=('serum_conc_percent', 'first'),
+''' 
+add features 
 
-                                                  mean_diff_xy_micron=('diff_xy_micron', 'mean'),
+In a resulting table targets have 't' in a column name, while features to be used in training start with 'f'.
+'''
+data_agg = data.groupby(['file', 'particle']).agg(t_guide=('guide', 'first'),
+                                                  t_time=('time', 'first'),
+                                                  t_serum_conc_percent=('serum_conc_percent', 'first'),
+
+                                                  f_mean_diff_xy_micron=('diff_xy_micron', 'mean'),
                                                   # average displacement
-                                                  max_diff_xy_micron=('diff_xy_micron', 'max'),  # maximal displacement
-                                                  sum_diff_xy_micron=('diff_xy_micron', 'sum'),
+                                                  f_max_diff_xy_micron=('diff_xy_micron', 'max'),  # maximal displacement
+                                                  f_sum_diff_xy_micron=('diff_xy_micron', 'sum'),
                                                   # total trajectory length
 
                                                   sum_diff_x_micron=('diff_x_micron', 'sum'),
@@ -20,37 +24,14 @@ data_agg = data.groupby(['file', 'particle']).agg(guide=('guide', 'first'),
 
                                                   )
 
-data_agg['total_displacement'] = np.sqrt((data_agg['sum_diff_x_micron'])**2 + (data_agg['sum_diff_y_micron'])**2)
+data_agg['f_total_displacement'] = np.sqrt((data_agg['sum_diff_x_micron'])**2 + (data_agg['sum_diff_y_micron'])**2)
 # distance from first to last coordinate
-data_agg['persistence'] = data_agg['total_displacement']/data_agg['sum_diff_xy_micron']
+data_agg['f_persistence'] = data_agg['f_total_displacement']/data_agg['f_sum_diff_xy_micron']
 # shows how directional the movement is
 
-
-'''
-example
-df1 = df.groupby("b").mean().cumsum()
-print (df1)
-   a
-b   
-1  2
-2  5
-
-df['a'] = df['b'].map(df1['a'])
-print (df)
-   a  b
-0  2  1
-1  2  1
-2  5  2
-3  5  2
-
-more example  df['sum_values_A'] = df.groupby('A')['values'].transform(np.sum)
-'''
-
-
-data_agg['f_mean_diff_xy_micron'] = data_agg.groupby('file')['mean_diff_xy_micron'].transform(np.max)
-# this is for masking then (fastest dot)
-
-
+data_agg['file_mean_diff_xy_micron'] = data_agg.groupby('file')['f_mean_diff_xy_micron'].transform(np.max)
+data_agg['f_fastest_mask'] = np.where((data_agg['f_mean_diff_xy_micron']==data_agg['file_mean_diff_xy_micron']), 1, 0)
+# the fastest (or the only available) dot in the nucleus is 1, the rest is 0
 
 
 ''' stratified cross-val K fold '''
