@@ -1,8 +1,11 @@
 import pandas as pd
 import numpy as np
-#from scipy.stats import linregress
+from scipy.stats import linregress
 
-''' read the data '''
+''' 
+read the data 
+'''
+
 data = pd.read_csv('scripts/data_chromatin_live.csv')
 
 ''' 
@@ -33,6 +36,7 @@ data_agg = data.groupby(['file', 'particle']).agg(t_guide=('guide', 'first'),
                                                   # morphology
 
                                                   f_min_dist_micron=('min_dist_micron', 'mean'),
+                                                  # minimal distance to edge averaged for each timelapse
                                                   min_min_dist_micron=('min_dist_micron', 'min'),
                                                   max_min_dist_micron=('min_dist_micron', 'max'),
                                                   beg_min_dist_micron=('min_dist_micron', 'first'),
@@ -58,5 +62,32 @@ data_agg['file_max_min_dist_micron'] = data_agg.groupby('file')['f_min_dist_micr
 data_agg['f_most_central_mask'] = np.where((data_agg['f_min_dist_micron'] == data_agg['file_max_min_dist_micron']), 1, 0)
 # DO NOT USE FOR guide AS TARGET (telo!)
 # the most central (or the only available) dot in the nucleus is 1, the rest is 0
+
+data_slope = data.groupby(['file', 'particle']).apply(lambda x: linregress(x['frame'], x['min_dist_micron'])[0])
+data_agg['f_slope_min_dist_micron'] = data_slope
+# slope for minimal distance to edge; how distance to edge changes within the timelapse?
+
+
+data_slope_area = data.groupby(['file', 'particle']).apply(lambda x: linregress(x['frame'], x['area_micron'])[0])
+data_agg['f_slope_area_micron'] = data_slope_area
+# slope for nucleus area; how area changes within the timelapse?
+
+data_slope_perimeter = data.groupby(['file', 'particle']).apply(lambda x: linregress(x['frame'],
+                                                                                     x['perimeter_au_norm'])[0])
+data_agg['f_slope_perimeter_au_norm'] = data_slope_perimeter
+# slope for nucleus perimeter
+
+'''
+for outliers
+3sd rule
+groupby agg to get SD
+concat before agg with aggregated (2-l index with 1-l?)
+data['outlier'] = np.where(cond, 1, 0)
+aggregate
+'''
+
+
+
+
 
 ''' stratified cross-val K fold '''
