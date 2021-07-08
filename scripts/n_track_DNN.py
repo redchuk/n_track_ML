@@ -14,7 +14,6 @@ add features
 In a resulting table targets have 't' in a column name, while features to be used in training start with 'f'.
 '''
 
-
 data_agg = data.groupby(['file', 'particle']).agg(t_guide=('guide', 'first'),
                                                   t_time=('time', 'first'),
                                                   t_serum_conc_percent=('serum_conc_percent', 'first'),
@@ -53,13 +52,14 @@ data_agg['f_fastest_mask'] = np.where((data_agg['f_mean_diff_xy_micron'] == data
 # DO NOT USE FOR guide AS TARGET (telo!)
 # the fastest (or the only available) dot in the nucleus is 1, the rest is 0
 
-data_agg['f_min_dist_range'] = data_agg['max_min_dist_micron']-data_agg['min_min_dist_micron']
+data_agg['f_min_dist_range'] = data_agg['max_min_dist_micron'] - data_agg['min_min_dist_micron']
 # min_dist change within timelapse (max-min) for each dot
-data_agg['f_total_min_dist'] = data_agg['end_min_dist_micron']-data_agg['beg_min_dist_micron']
+data_agg['f_total_min_dist'] = data_agg['end_min_dist_micron'] - data_agg['beg_min_dist_micron']
 # how distance changed within timelapse (frame29-frame0)
 
 data_agg['file_max_min_dist_micron'] = data_agg.groupby('file')['f_min_dist_micron'].transform(np.max)
-data_agg['f_most_central_mask'] = np.where((data_agg['f_min_dist_micron'] == data_agg['file_max_min_dist_micron']), 1, 0)
+data_agg['f_most_central_mask'] = np.where((data_agg['f_min_dist_micron'] == data_agg['file_max_min_dist_micron']), 1,
+                                           0)
 # DO NOT USE FOR guide AS TARGET (telo!)
 # the most central (or the only available) dot in the nucleus is 1, the rest is 0
 
@@ -77,17 +77,19 @@ data_slope_perimeter = data.groupby(['file', 'particle']).apply(lambda x: linreg
 data_agg['f_slope_perimeter_au_norm'] = data_slope_perimeter
 # slope for nucleus perimeter
 
-'''
-for outliers
-3sd rule
-groupby agg to get SD
-concat before agg with aggregated (2-l index with 1-l?)
-data['outlier'] = np.where(cond, 1, 0)
-aggregate
-'''
-
-
-
+data_SD_diff_xy_micron = data.groupby(['file', 'particle']).agg(SD_diff=('diff_xy_micron', 'std'))
+data_i = data.set_index(['file', 'particle'])
+data_i['SD_diff_xy_micron'] = data_SD_diff_xy_micron
+data_i['f_mean_diff_xy_micron'] = data_agg['f_mean_diff_xy_micron']
+data_i['outliers2SD_diff_xy'] = np.where((data_i['diff_xy_micron'] >
+                                          (data_i['f_mean_diff_xy_micron']+2*data_i['SD_diff_xy_micron'])), 1, 0)
+data_i['outliers3SD_diff_xy'] = np.where((data_i['diff_xy_micron'] >
+                                          (data_i['f_mean_diff_xy_micron']+3*data_i['SD_diff_xy_micron'])), 1, 0)
+data_agg['f_outliers2SD_diff_xy'] = data_i.groupby(['file', 'particle'])\
+    .agg(f_outliers2SD_diff_xy=('outliers2SD_diff_xy', 'sum'))
+data_agg['f_outliers3SD_diff_xy'] = data_i.groupby(['file', 'particle'])\
+    .agg(f_outliers3SD_diff_xy=('outliers3SD_diff_xy', 'sum'))
+# is there a displacement larger than mean plus 2SD or 3SD respectively
 
 
 ''' stratified cross-val K fold '''
