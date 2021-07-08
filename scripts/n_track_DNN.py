@@ -7,6 +7,9 @@ read the data
 '''
 
 data = pd.read_csv('scripts/data_chromatin_live.csv')
+data = data[~data["comment"].isin(["stress_control"])]
+data = data[~data["comment"].isin(["H2B"])]
+# initial filtering based on experimental setup
 
 ''' 
 add features 
@@ -89,7 +92,18 @@ data_agg['f_outliers2SD_diff_xy'] = data_i.groupby(['file', 'particle'])\
     .agg(f_outliers2SD_diff_xy=('outliers2SD_diff_xy', 'sum'))
 data_agg['f_outliers3SD_diff_xy'] = data_i.groupby(['file', 'particle'])\
     .agg(f_outliers3SD_diff_xy=('outliers3SD_diff_xy', 'sum'))
-# is there a displacement larger than mean plus 2SD or 3SD respectively
+# is there a displacement larger than mean plus 2SD or 3SD (SD calculated for each dot, 29xy pairs) respectively
+
+data_sterile = data_agg.drop(['sum_diff_x_micron',
+                            'sum_diff_y_micron',
+                            'min_min_dist_micron',
+                            'max_min_dist_micron',
+                            'beg_min_dist_micron',
+                            'end_min_dist_micron',
+                            'file_mean_diff_xy_micron',
+                            'file_max_min_dist_micron',
+                            ], axis=1)
+# cleaning up
 
 
 ''' stratified cross-val K fold '''
