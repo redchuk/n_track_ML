@@ -103,7 +103,14 @@ data_sterile = data_agg.drop(['sum_diff_x_micron',
                             'file_mean_diff_xy_micron',
                             'file_max_min_dist_micron',
                             ], axis=1)
+data_sterile.reset_index(inplace=True)
 # cleaning up
 
+test_choice = np.random.RandomState(4242).choice(data_sterile['file'].unique(), 35, replace=False)
+test_data = data_sterile[data_sterile['file'].isin(test_choice)]
+train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
+# train/test split. 779 dots total
+# test:  163 dots, 35  nuclei of which 6  telomeres
+# train: 616 dots, 140 nuclei of which 30 telomeres
 
-''' stratified cross-val K fold '''
+#gkf = GroupKFold(n_splits=3)
