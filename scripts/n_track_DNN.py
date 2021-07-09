@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import linregress
+from sklearn.model_selection import GroupKFold
+from sklearn.model_selection import cross_val_score
+from sklearn import tree
+from sklearn.ensemble import RandomForestClassifier
 
 ''' 
 read the data 
@@ -113,4 +117,16 @@ train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
 # test:  163 dots, 35  nuclei of which 6  telomeres
 # train: 616 dots, 140 nuclei of which 30 telomeres
 
-#gkf = GroupKFold(n_splits=3)
+
+X = train_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
+       'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
+       'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
+       'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
+       'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
+       'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
+       'f_outliers3SD_diff_xy']]
+y = train_data['t_serum_conc_percent'].astype('str')
+
+forest = RandomForestClassifier(n_estimators=100, random_state=4242)
+gkf = GroupKFold(n_splits=4)
+print("Cross-validation scores:\n{}".format(cross_val_score(forest, X, y, cv=gkf, groups=train_data['file'])))
