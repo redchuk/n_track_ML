@@ -12,13 +12,18 @@ read the data
 
 data = pd.read_csv('scripts/data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
-data = data[~data["comment"].isin(["H2B"])]
+data = data[data["guide"].isin(["pl_1398_chr1"])]
+
+
+
+
+# data = data[~data["comment"].isin(["H2B"])]
 # initial filtering based on experimental setup
 
 ''' 
 add features 
 
-In a resulting table targets have 't' in a column name, while features to be used in training start with 'f'.
+In a resulting table target column names start with a 't', while features to be used in training start with 'f'.
 '''
 
 data_agg = data.groupby(['file', 'particle']).agg(t_guide=('guide', 'first'),
@@ -110,6 +115,11 @@ data_sterile = data_agg.drop(['sum_diff_x_micron',
 data_sterile.reset_index(inplace=True)
 # cleaning up
 
+''' 
+Train / test split
+'''
+
+
 test_choice = np.random.RandomState(4242).choice(data_sterile['file'].unique(), 35, replace=False)
 test_data = data_sterile[data_sterile['file'].isin(test_choice)]
 train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
@@ -127,6 +137,13 @@ X = train_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_
        'f_outliers3SD_diff_xy']]
 y = train_data['t_serum_conc_percent'].astype('str')
 
-forest = RandomForestClassifier(n_estimators=100, random_state=4242)
+''' 
+Random forest
+'''
+
+
+forest = RandomForestClassifier(n_estimators=1000, random_state=4242)
 gkf = GroupKFold(n_splits=4)
 print("Cross-validation scores:\n{}".format(cross_val_score(forest, X, y, cv=gkf, groups=train_data['file'])))
+# random forest performance to be tuned
+# https://stackoverflow.com/questions/55466081/how-to-calculate-feature-importance-in-each-models-of-cross-validation-in-sklear
