@@ -10,14 +10,12 @@ from sklearn.ensemble import RandomForestClassifier
 read the data 
 '''
 
-data = pd.read_csv('scripts/data_chromatin_live.csv')
+data = pd.read_csv('scripts/63455ea_data_chromatin_live.csv')
+#data = pd.read_csv('scripts/data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
-data = data[data["guide"].isin(["pl_1398_chr1"])]
+data = data[~data["comment"].isin(["H2B"])]
+data = data[data["guide"].str.contains('1398')|data["guide"].str.contains('1514')]
 
-
-
-
-# data = data[~data["comment"].isin(["H2B"])]
 # initial filtering based on experimental setup
 
 ''' 
@@ -94,24 +92,24 @@ data_i = data.set_index(['file', 'particle'])
 data_i['SD_diff_xy_micron'] = data_SD_diff_xy_micron
 data_i['f_mean_diff_xy_micron'] = data_agg['f_mean_diff_xy_micron']
 data_i['outliers2SD_diff_xy'] = np.where((data_i['diff_xy_micron'] >
-                                          (data_i['f_mean_diff_xy_micron']+2*data_i['SD_diff_xy_micron'])), 1, 0)
+                                          (data_i['f_mean_diff_xy_micron'] + 2 * data_i['SD_diff_xy_micron'])), 1, 0)
 data_i['outliers3SD_diff_xy'] = np.where((data_i['diff_xy_micron'] >
-                                          (data_i['f_mean_diff_xy_micron']+3*data_i['SD_diff_xy_micron'])), 1, 0)
-data_agg['f_outliers2SD_diff_xy'] = data_i.groupby(['file', 'particle'])\
+                                          (data_i['f_mean_diff_xy_micron'] + 3 * data_i['SD_diff_xy_micron'])), 1, 0)
+data_agg['f_outliers2SD_diff_xy'] = data_i.groupby(['file', 'particle']) \
     .agg(f_outliers2SD_diff_xy=('outliers2SD_diff_xy', 'sum'))
-data_agg['f_outliers3SD_diff_xy'] = data_i.groupby(['file', 'particle'])\
+data_agg['f_outliers3SD_diff_xy'] = data_i.groupby(['file', 'particle']) \
     .agg(f_outliers3SD_diff_xy=('outliers3SD_diff_xy', 'sum'))
 # is there a displacement larger than mean plus 2SD or 3SD (SD calculated for each dot, 29xy pairs) respectively
 
 data_sterile = data_agg.drop(['sum_diff_x_micron',
-                            'sum_diff_y_micron',
-                            'min_min_dist_micron',
-                            'max_min_dist_micron',
-                            'beg_min_dist_micron',
-                            'end_min_dist_micron',
-                            'file_mean_diff_xy_micron',
-                            'file_max_min_dist_micron',
-                            ], axis=1)
+                              'sum_diff_y_micron',
+                              'min_min_dist_micron',
+                              'max_min_dist_micron',
+                              'beg_min_dist_micron',
+                              'end_min_dist_micron',
+                              'file_mean_diff_xy_micron',
+                              'file_max_min_dist_micron',
+                              ], axis=1)
 data_sterile.reset_index(inplace=True)
 # cleaning up
 
@@ -119,31 +117,33 @@ data_sterile.reset_index(inplace=True)
 Train / test split
 '''
 
+tst = int((data_sterile['file'].unique().shape[0]) / 5)
+# nuclei number to choose for testing
 
-test_choice = np.random.RandomState(4242).choice(data_sterile['file'].unique(), 35, replace=False)
+test_choice = np.random.RandomState(4242).choice(data_sterile['file'].unique(), tst, replace=False)
 test_data = data_sterile[data_sterile['file'].isin(test_choice)]
 train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
-# train/test split. 779 dots total
-# test:  163 dots, 35  nuclei of which 6  telomeres
-# train: 616 dots, 140 nuclei of which 30 telomeres
-
+train_data = train_data.dropna()
 
 X = train_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
-       'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
-       'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
-       'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
-       'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
-       'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-       'f_outliers3SD_diff_xy']]
+                'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
+                'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
+                'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
+                'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
+                'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
+                'f_outliers3SD_diff_xy']]
 y = train_data['t_serum_conc_percent'].astype('str')
 
 ''' 
 Random forest
 '''
 
-
-forest = RandomForestClassifier(n_estimators=1000, random_state=4242)
-gkf = GroupKFold(n_splits=4)
+forest = RandomForestClassifier(n_estimators=1000, max_features=2, random_state=4242)
+gkf = GroupKFold(n_splits=3)
 print("Cross-validation scores:\n{}".format(cross_val_score(forest, X, y, cv=gkf, groups=train_data['file'])))
 # random forest performance to be tuned
 # https://stackoverflow.com/questions/55466081/how-to-calculate-feature-importance-in-each-models-of-cross-validation-in-sklear
+# [0.5754717  0.63207547 0.59047619]
+# [0.60377358 0.62264151 0.60952381] max_features=3
+# [0.62264151 0.66037736 0.61904762] max_features=2
+# max_depth? + max_features combination?
