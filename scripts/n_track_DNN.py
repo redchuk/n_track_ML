@@ -154,8 +154,7 @@ grid_search = GridSearchCV(grid_forest, param_grid, cv=gkf)
 grid_search.fit(X, y, groups=train_data['file'])
 grid_forest_results = pd.DataFrame(grid_search.cv_results_)
 forest_importances = grid_search.best_estimator_.feature_importances_
+std = np.std([tree.feature_importances_ for tree in grid_search.best_estimator_.estimators_], axis=0)
+var = np.var([tree.feature_importances_ for tree in grid_search.best_estimator_.estimators_], axis=0)
+# variance seems small, probably because of high n_estimators
 
-
-# random forest performance to be tuned
-# https://stackoverflow.com/questions/55466081/how-to-calculate-feature-importance-in-each-models-of-cross-validation-in-sklear
-# max_depth? + max_features combination?
