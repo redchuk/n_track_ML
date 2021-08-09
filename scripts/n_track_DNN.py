@@ -1,20 +1,23 @@
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.stats import linregress
 from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
+
 
 ''' 
 read the data 
 '''
 
 data = pd.read_csv('scripts/63455ea_data_chromatin_live.csv')
-#data = pd.read_csv('scripts/data_chromatin_live.csv')
+# data = pd.read_csv('scripts/data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
 data = data[~data["comment"].isin(["H2B"])]
-data = data[data["guide"].str.contains('1398')|data["guide"].str.contains('1514')]
+data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
 
 # initial filtering based on experimental setup
 
@@ -141,9 +144,18 @@ Random forest
 forest = RandomForestClassifier(n_estimators=1000, max_features=2, random_state=4242)
 gkf = GroupKFold(n_splits=3)
 print("Cross-validation scores:\n{}".format(cross_val_score(forest, X, y, cv=gkf, groups=train_data['file'])))
+# [0.62264151 0.66037736 0.61904762] max_features=2
+
+param_grid = {'max_features': [1, 2, 3, 5, 10, 15, "auto"],
+              'max_depth': [1, 2, 3, 5, 10,  None]}
+
+grid_forest = RandomForestClassifier(n_estimators=1000)
+grid_search = GridSearchCV(grid_forest, param_grid, cv=gkf)
+grid_search.fit(X, y, groups=train_data['file'])
+grid_forest_results = pd.DataFrame(grid_search.cv_results_)
+forest_importances = grid_search.best_estimator_.feature_importances_
+
+
 # random forest performance to be tuned
 # https://stackoverflow.com/questions/55466081/how-to-calculate-feature-importance-in-each-models-of-cross-validation-in-sklear
-# [0.5754717  0.63207547 0.59047619]
-# [0.60377358 0.62264151 0.60952381] max_features=3
-# [0.62264151 0.66037736 0.61904762] max_features=2
 # max_depth? + max_features combination?
