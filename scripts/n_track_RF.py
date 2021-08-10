@@ -1,11 +1,9 @@
 import pandas as pd
 import numpy as np
-from matplotlib import pyplot as plt
 from scipy.stats import linregress
 from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
-from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
 
 
@@ -14,11 +12,9 @@ read the data
 '''
 
 data = pd.read_csv('scripts/63455ea_data_chromatin_live.csv')
-# data = pd.read_csv('scripts/data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
 data = data[~data["comment"].isin(["H2B"])]
 data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
-
 # initial filtering based on experimental setup
 
 ''' 
