@@ -144,7 +144,6 @@ Random forest
 forest = RandomForestClassifier(n_estimators=1000, max_features=2, random_state=4242)
 gkf = GroupKFold(n_splits=3)
 print("Cross-validation scores:\n{}".format(cross_val_score(forest, X, y, cv=gkf, groups=train_data['file'])))
-# [0.62264151 0.66037736 0.61904762] max_features=2
 
 param_grid = {'max_features': [1, 2, 3, 5, 10, 15, "auto"],
               'max_depth': [1, 2, 3, 5, 10,  None]}
@@ -156,5 +155,5 @@ grid_forest_results = pd.DataFrame(grid_search.cv_results_)
 forest_importances = grid_search.best_estimator_.feature_importances_
 std = np.std([tree.feature_importances_ for tree in grid_search.best_estimator_.estimators_], axis=0)
 var = np.var([tree.feature_importances_ for tree in grid_search.best_estimator_.estimators_], axis=0)
-# variance seems small, probably because of high n_estimators
+
 
