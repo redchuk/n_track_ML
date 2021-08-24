@@ -1,8 +1,12 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from scipy.stats import linregress
+from matplotlib import pyplot as plt
 
-import tensorflow as tf
+from keras import models
+from keras import layers
+from keras import regularizers
 
 # from sklearn.model_selection import GroupKFold
 # from sklearn.model_selection import cross_val_score
@@ -150,3 +154,30 @@ y_test = (y_test / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' 
 
 X_norm = X / X.max(axis=0)
 X_test_norm = X_test / X_test.max(axis=0)
+
+model = models.Sequential()
+model.add(layers.Dense(512, activation='relu'))
+model.add(layers.Dropout(0.6))
+model.add(layers.Dense(512, activation='relu'))
+model.add(layers.Dropout(0.4))
+model.add(layers.Dense(256, activation='relu'))
+
+model.add(layers.Dense(1, activation='sigmoid'))
+
+model.compile(optimizer='adam',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+history = model.fit(X_norm,
+                    y,
+                    epochs=50,
+                    #batch_size=512,
+                    validation_data=(X_test_norm, y_test),
+                    )
+
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+
+plt.plot(acc)
+plt.plot(val_acc)
+plt.show()
