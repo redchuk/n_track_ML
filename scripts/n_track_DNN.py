@@ -7,6 +7,8 @@ from matplotlib import pyplot as plt
 from keras import models
 from keras import layers
 from keras import regularizers
+from keras.layers import Dropout
+
 
 # from sklearn.model_selection import GroupKFold
 # from sklearn.model_selection import cross_val_score
@@ -131,23 +133,42 @@ test_data = data_sterile[data_sterile['file'].isin(test_choice)]
 train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
 train_data = train_data.dropna()
 
-X = train_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
+'''X = train_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
                 'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
                 'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
                 'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
                 'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
                 'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-                'f_outliers3SD_diff_xy']]
+                'f_outliers3SD_diff_xy']]'''
+
+X = train_data[['f_area_micron',
+                'f_perimeter_au_norm',
+                'f_min_dist_micron',
+                'f_min_dist_range',
+                'f_slope_area_micron',
+                'f_slope_perimeter_au_norm',
+                ]]
+
+
 y = train_data['t_serum_conc_percent']
 y = (y / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' = 0
 
-X_test = test_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
+'''X_test = test_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
                     'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
                     'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
                     'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
                     'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
                     'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-                    'f_outliers3SD_diff_xy']]
+                    'f_outliers3SD_diff_xy']]'''
+
+X_test = test_data[['f_area_micron',
+                'f_perimeter_au_norm',
+                'f_min_dist_micron',
+                'f_min_dist_range',
+                'f_slope_area_micron',
+                'f_slope_perimeter_au_norm',
+                ]]
+
 
 y_test = test_data['t_serum_conc_percent']
 y_test = (y_test / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' = 0
@@ -156,12 +177,7 @@ X_norm = X / X.max(axis=0)
 X_test_norm = X_test / X_test.max(axis=0)
 
 model = models.Sequential()
-model.add(layers.Dense(512, activation='relu'))
-model.add(layers.Dropout(0.6))
-model.add(layers.Dense(512, activation='relu'))
-model.add(layers.Dropout(0.4))
-model.add(layers.Dense(256, activation='relu'))
-
+model.add(layers.Dense(32, activation='relu'))
 model.add(layers.Dense(1, activation='sigmoid'))
 
 model.compile(optimizer='adam',
@@ -170,8 +186,8 @@ model.compile(optimizer='adam',
 
 history = model.fit(X_norm,
                     y,
-                    epochs=50,
-                    #batch_size=512,
+                    epochs=500,
+                    #batch_size=50,
                     validation_data=(X_test_norm, y_test),
                     )
 
@@ -181,3 +197,14 @@ val_acc = history.history['val_accuracy']
 plt.plot(acc)
 plt.plot(val_acc)
 plt.show()
+
+# cross-val
+# try high importance features from RF
+# try whole dataset (one-hot encode 'guide')
+
+'''
+Index(['pl_1362_telo', 'pl_1398_chr1', 'pl_1398_chr2', 'pl_1403_chr13',
+       'pl_1404_chr10', 'pl_1404_chr13', 'pl_1406_chrx', 'pl_1514_chr1',
+       'pl_1521_chr10', 'pl_1522_chr10', 'pl_1532_chr18'],
+      dtype='object')
+'''
