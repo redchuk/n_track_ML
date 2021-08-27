@@ -125,86 +125,75 @@ data_sterile.reset_index(inplace=True)
 Train / test split
 '''
 
-tst = int((data_sterile['file'].unique().shape[0]) / 3)
-# nuclei number to choose for testing
-
-test_choice = np.random.RandomState(4242).choice(data_sterile['file'].unique(), tst, replace=False)
-test_data = data_sterile[data_sterile['file'].isin(test_choice)]
-train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
-train_data = train_data.dropna()
-
-'''X = train_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
+features = ['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
                 'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
                 'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
                 'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
                 'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
                 'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-                'f_outliers3SD_diff_xy']]'''
+                'f_outliers3SD_diff_xy']
 
-X = train_data[['f_area_micron',
-                'f_perimeter_au_norm',
-                'f_min_dist_micron',
-                'f_min_dist_range',
-                'f_slope_area_micron',
-                'f_slope_perimeter_au_norm',
-                ]]
+'''features = ['f_area_micron', 'f_perimeter_au_norm',
+                'f_min_dist_micron', 'f_min_dist_range', 'f_slope_area_micron',
+                'f_slope_perimeter_au_norm']'''
 
 
-y = train_data['t_serum_conc_percent']
-y = (y / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' = 0
+tst = int((data_sterile['file'].unique().shape[0]) / 5)
+# nuclei number to choose for testing
 
-'''X_test = test_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
-                    'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
-                    'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
-                    'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
-                    'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
-                    'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-                    'f_outliers3SD_diff_xy']]'''
+#test_choice = np.random.RandomState(7).choice(data_sterile['file'].unique(), tst, replace=False)
 
-X_test = test_data[['f_area_micron',
-                'f_perimeter_au_norm',
-                'f_min_dist_micron',
-                'f_min_dist_range',
-                'f_slope_area_micron',
-                'f_slope_perimeter_au_norm',
-                ]]
+results = pd.DataFrame()
+for i in range(30):
+    test_choice = np.random.choice(data_sterile['file'].unique(), tst, replace=False)
+
+    test_data = data_sterile[data_sterile['file'].isin(test_choice)]
+    train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
+    train_data = train_data.dropna()
+
+    X = train_data[features]
+
+    y = train_data['t_serum_conc_percent']
+    y = (y / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' = 0
+
+    X_test = test_data[features]
 
 
-y_test = test_data['t_serum_conc_percent']
-y_test = (y_test / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' = 0
 
-X_norm = X / X.max(axis=0)
-X_test_norm = X_test / X_test.max(axis=0)
+    y_test = test_data['t_serum_conc_percent']
+    y_test = (y_test / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' = 0
 
-model = models.Sequential()
-model.add(layers.Dense(32, activation='relu'))
-model.add(layers.Dense(1, activation='sigmoid'))
+    X_norm = X / X.max(axis=0)
+    X_test_norm = X_test / X.max(axis=0) # devided by X.max but not X_test.max, so that normalization is the same
 
-model.compile(optimizer='adam',
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
+    model = models.Sequential()
+    model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(1, activation='sigmoid'))
 
-history = model.fit(X_norm,
-                    y,
-                    epochs=500,
-                    #batch_size=50,
-                    validation_data=(X_test_norm, y_test),
-                    )
+    model.compile(optimizer='adam',
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
 
-acc = history.history['accuracy']
-val_acc = history.history['val_accuracy']
+    history = model.fit(X_norm,
+                        y,
+                        epochs=500,
+                        #batch_size=50,
+                        validation_data=(X_test_norm, y_test),
+                        verbose=0,
+                        )
 
-plt.plot(acc)
-plt.plot(val_acc)
+
+
+    results["acc" + str(i)] = history.history['accuracy']
+    results["val_acc" + str(i)] = history.history['val_accuracy']
+
+
+
+    #print(1-y.sum()/len(y))
+    print(1-y_test.sum()/len(y_test))
+
+
+plt.plot(results)
 plt.show()
 
-# cross-val
-# try high importance features from RF
-# try whole dataset (one-hot encode 'guide')
 
-'''
-Index(['pl_1362_telo', 'pl_1398_chr1', 'pl_1398_chr2', 'pl_1403_chr13',
-       'pl_1404_chr10', 'pl_1404_chr13', 'pl_1406_chrx', 'pl_1514_chr1',
-       'pl_1521_chr10', 'pl_1522_chr10', 'pl_1532_chr18'],
-      dtype='object')
-'''
