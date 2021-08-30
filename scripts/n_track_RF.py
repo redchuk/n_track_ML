@@ -15,6 +15,8 @@ data = pd.read_csv('scripts/63455ea_data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
 data = data[~data["comment"].isin(["H2B"])]
 data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
+data = data[data["time"] < 40]
+
 # initial filtering based on experimental setup
 
 ''' 
@@ -137,7 +139,7 @@ y = train_data['t_serum_conc_percent'].astype('str')
 Random forest
 '''
 
-forest = RandomForestClassifier(n_estimators=1000, max_features=2, random_state=4242)
+forest = RandomForestClassifier(n_estimators=1000, max_features=2, random_state=42)
 gkf = GroupKFold(n_splits=3)
 print("Cross-validation scores:\n{}".format(cross_val_score(forest, X, y, cv=gkf, groups=train_data['file'])))
 

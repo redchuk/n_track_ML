@@ -9,7 +9,6 @@ from keras import layers
 from keras import regularizers
 from keras.layers import Dropout
 
-
 # from sklearn.model_selection import GroupKFold
 # from sklearn.model_selection import cross_val_score
 # from sklearn.model_selection import GridSearchCV
@@ -24,6 +23,7 @@ data = pd.read_csv('scripts/63455ea_data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
 data = data[~data["comment"].isin(["H2B"])]
 data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
+data = data[data["time"] < 40]
 # initial filtering based on experimental setup
 
 ''' 
@@ -125,23 +125,27 @@ data_sterile.reset_index(inplace=True)
 Train / test split
 '''
 
-features = ['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
+'''features = ['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
                 'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
                 'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
                 'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
                 'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
                 'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-                'f_outliers3SD_diff_xy']
+                'f_outliers3SD_diff_xy']'''
 
 '''features = ['f_area_micron', 'f_perimeter_au_norm',
-                'f_min_dist_micron', 'f_min_dist_range', 'f_slope_area_micron',
-                'f_slope_perimeter_au_norm']'''
+            'f_min_dist_micron', 'f_min_dist_range', 'f_slope_area_micron',
+            'f_slope_perimeter_au_norm']'''
+
+features = ['f_area_micron', 'f_perimeter_au_norm',
+            'f_min_dist_micron', 'f_min_dist_range', 'f_slope_area_micron',
+            'f_slope_perimeter_au_norm', 'f_mean_diff_xy_micron', 'f_sum_diff_xy_micron']
 
 
-tst = int((data_sterile['file'].unique().shape[0]) / 5)
+tst = int((data_sterile['file'].unique().shape[0]) / 3)
 # nuclei number to choose for testing
 
-#test_choice = np.random.RandomState(7).choice(data_sterile['file'].unique(), tst, replace=False)
+# test_choice = np.random.RandomState(7).choice(data_sterile['file'].unique(), tst, replace=False)
 
 results = pd.DataFrame()
 for i in range(30):
@@ -158,15 +162,19 @@ for i in range(30):
 
     X_test = test_data[features]
 
-
-
     y_test = test_data['t_serum_conc_percent']
     y_test = (y_test / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' = 0
 
     X_norm = X / X.max(axis=0)
-    X_test_norm = X_test / X.max(axis=0) # devided by X.max but not X_test.max, so that normalization is the same
+    X_test_norm = X_test / X.max(axis=0)  # devided by X.max but not X_test.max, so that normalization is the same
 
     model = models.Sequential()
+    model.add(layers.Dense(64, activation='relu'))
+    #model.add(layers.Dropout(0.4))
+    model.add(layers.Dense(64, activation='relu'))
+    #model.add(layers.Dropout(0.4))
+    model.add(layers.Dense(64, activation='relu'))
+    #model.add(layers.Dropout(0.4))
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
 
@@ -177,23 +185,16 @@ for i in range(30):
     history = model.fit(X_norm,
                         y,
                         epochs=500,
-                        #batch_size=50,
+                        # batch_size=50,
                         validation_data=(X_test_norm, y_test),
                         verbose=0,
                         )
 
-
-
     results["acc" + str(i)] = history.history['accuracy']
     results["val_acc" + str(i)] = history.history['val_accuracy']
 
-
-
-    #print(1-y.sum()/len(y))
-    print(1-y_test.sum()/len(y_test))
-
+    # print(1-y.sum()/len(y))
+    print(1 - y_test.sum() / len(y_test))
 
 plt.plot(results)
 plt.show()
-
-
