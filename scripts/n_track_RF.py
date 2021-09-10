@@ -164,7 +164,7 @@ gkf = GroupKFold(n_splits=3)
 print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
 
 b_param_grid = {'learning_rate': [0.001, 0.01, 0.1, 1, 10],
-              'max_depth': [1, 2, 3, 5, 10]}
+                'max_depth': [1, 2, 3, 5, 10]}
 
 grid_b_forest = GradientBoostingClassifier(n_estimators=1000)
 b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf)
@@ -174,4 +174,17 @@ forest_b_importances = b_grid_search.best_estimator_.feature_importances_
 
 forests_comp = pd.DataFrame({'RF': forest_importances, 'GBC': forest_b_importances}, index=X.columns)
 # forests_comp.plot(kind='bar')
-# compare imortances for forest types
+# compare importances for forest types
+
+# y.value_counts() # to check if classes are balanced
+# b_grid_forest_results.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_forest_results.csv')
+
+b_pvt = pd.pivot_table(b_grid_forest_results,
+                       values='mean_test_score',
+                       index='param_learning_rate',
+                       columns='param_max_depth')
+
+rf_pvt = pd.pivot_table(grid_forest_results,
+                        values='mean_test_score',
+                        index='param_max_features',
+                        columns='param_max_depth')

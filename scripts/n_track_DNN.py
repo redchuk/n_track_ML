@@ -125,21 +125,21 @@ data_sterile.reset_index(inplace=True)
 Train / test split
 '''
 
-'''features = ['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
+features = ['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
                 'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
                 'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
                 'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
                 'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
                 'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-                'f_outliers3SD_diff_xy']'''
+                'f_outliers3SD_diff_xy']
 
-'''features = ['f_area_micron', 'f_perimeter_au_norm',
-            'f_min_dist_micron', 'f_min_dist_range', 'f_slope_area_micron',
-            'f_slope_perimeter_au_norm']'''
-
-features = ['f_area_micron', 'f_perimeter_au_norm',
-            'f_min_dist_micron', 'f_min_dist_range', 'f_slope_area_micron',
-            'f_slope_perimeter_au_norm', 'f_mean_diff_xy_micron', 'f_sum_diff_xy_micron']
+'''features = ['f_mean_diff_xy_micron', 'f_sum_diff_xy_micron',
+                'f_area_micron', 'f_perimeter_au_norm',
+                'f_persistence',
+                'f_min_dist_range', 'f_total_min_dist',
+                'f_slope_area_micron',
+                'f_slope_perimeter_au_norm']
+# important from gradient boosted'''
 
 
 tst = int((data_sterile['file'].unique().shape[0]) / 3)
