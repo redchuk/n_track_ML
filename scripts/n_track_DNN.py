@@ -169,9 +169,9 @@ for i in range(30):
     X_test_norm = X_test / X.max(axis=0)  # devided by X.max but not X_test.max, so that normalization is the same
 
     model = models.Sequential()
-    model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(128, activation='relu'))
     #model.add(layers.Dropout(0.4))
-    model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(128, activation='relu'))
     #model.add(layers.Dropout(0.4))
     model.add(layers.Dense(64, activation='relu'))
     #model.add(layers.Dropout(0.4))
