@@ -15,7 +15,7 @@ data = pd.read_csv('scripts/63455ea_data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
 data = data[~data["comment"].isin(["H2B"])]
 data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
-# data = data[data["time"] < 40]
+#data = data[data["time"] < 40]
 
 # initial filtering based on experimental setup
 
@@ -126,13 +126,16 @@ test_data = data_sterile[data_sterile['file'].isin(test_choice)]
 train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
 train_data = train_data.dropna()
 
-X = train_data[['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
+features = ['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
                 'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
                 'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
                 'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
                 'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
                 'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-                'f_outliers3SD_diff_xy']]
+                'f_outliers3SD_diff_xy']
+
+
+X = train_data[features]
 
 y = train_data['t_serum_conc_percent'].astype('str')
 
@@ -140,6 +143,7 @@ y = train_data['t_serum_conc_percent'].astype('str')
 Random forest
 '''
 
+'''
 forest = RandomForestClassifier(n_estimators=1000, max_features=2, random_state=42)
 gkf = GroupKFold(n_splits=3)
 print("Cross-validation scores:\n{}".format(cross_val_score(forest, X, y, cv=gkf, groups=train_data['file'])))
@@ -154,6 +158,7 @@ grid_forest_results = pd.DataFrame(grid_search.cv_results_)
 forest_importances = grid_search.best_estimator_.feature_importances_
 std = np.std([tree.feature_importances_ for tree in grid_search.best_estimator_.estimators_], axis=0)
 var = np.var([tree.feature_importances_ for tree in grid_search.best_estimator_.estimators_], axis=0)
+'''
 
 ''' 
 Gradient boosting trees
@@ -188,3 +193,11 @@ rf_pvt = pd.pivot_table(grid_forest_results,
                         values='mean_test_score',
                         index='param_max_features',
                         columns='param_max_depth')
+
+''' 
+Plotting forests results
+'''
+
+data_to_predict = data_sterile[features]
+data_sterile['predicted_boosted'] = b_grid_search.best_estimator_.predict(data_sterile[features]).astype(float)
+#data_sterile.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_predict66.csv')
