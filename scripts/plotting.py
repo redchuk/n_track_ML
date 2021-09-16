@@ -1,0 +1,1 @@
+data = pd.read_csv('scripts/data_sterile_449e453.csv')
