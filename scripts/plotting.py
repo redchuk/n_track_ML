@@ -1,9 +1,13 @@
 import pandas as pd
 import dabest
+import seaborn as sns
 
 data_to_plot = pd.read_csv('scripts/data_sterile_449e453.csv')
-# data_to_plot = data_to_plot[data_to_plot['f_outliers2SD_diff_xy'] == 2] # outliers only
+# data_to_plot = data_to_plot[data_to_plot['f_outliers2SD_diff_xy'] > 1] # outliers only
 
+"""
+Plotting the dynamic features using Dabest
+"""
 
 def gen_set(data, parameter='', chr_name='', guides=''):
     """
@@ -58,10 +62,25 @@ multi_2group = dabest.load(all_chr, idx=(('chr1, 10%', 'chr1, 0.3%'),
                                          ('telo, 10%', 'telo, 0.3%'),
                                          ))
 
-multi_2group.mean_diff.plot(raw_marker_size=3,
+'''
+multi_2group.mean_diff.plot(raw_marker_size=5,
                             es_marker_size=6,
                             swarm_label=feature,
                             color_col=hue,
-                            # custom_palette = "inferno",
+                            swarm_desat=1,
+                            custom_palette=('tab10'),
                             # swarm_ylim=(-0.05, 0.05),
                             )
+'''
+
+"""
+Plotting the correlations in serum and in starvation, to check for homolog_chr-specific behaviour
+Chromosome 1 only
+"""
+
+chr1 = data_to_plot[data_to_plot["t_guide"].str.contains('1398|1514', regex=True)]
+chr1.set_index(['file', 'particle'], inplace=True)
+fast = chr1[chr1['f_fastest_mask']==1].reset_index(level=1).add_prefix('f_')
+slow = chr1[chr1['f_fastest_mask']==0].reset_index(level=1).add_prefix('s_')
+slow = slow[~slow.index.duplicated(keep='first')] # in some (rare) cases the dot retained is not the slowest one
+speed = pd.concat([fast, slow], axis=1).dropna()
