@@ -1,6 +1,7 @@
 import pandas as pd
 import dabest
 import seaborn as sns
+from matplotlib import pyplot as plt
 
 data_to_plot = pd.read_csv('scripts/data_sterile_449e453.csv')
 # data_to_plot = data_to_plot[data_to_plot['f_outliers2SD_diff_xy'] > 1] # outliers only
@@ -8,6 +9,7 @@ data_to_plot = pd.read_csv('scripts/data_sterile_449e453.csv')
 """
 Plotting the dynamic features using Dabest
 """
+
 
 def gen_set(data, parameter='', chr_name='', guides=''):
     """
@@ -76,11 +78,40 @@ multi_2group.mean_diff.plot(raw_marker_size=5,
 """
 Plotting the correlations in serum and in starvation, to check for homolog_chr-specific behaviour
 Chromosome 1 only
+
+SMTH WENT WRONG HERE OR NOT
 """
 
 chr1 = data_to_plot[data_to_plot["t_guide"].str.contains('1398|1514', regex=True)]
 chr1.set_index(['file', 'particle'], inplace=True)
-fast = chr1[chr1['f_fastest_mask']==1].reset_index(level=1).add_prefix('f_')
-slow = chr1[chr1['f_fastest_mask']==0].reset_index(level=1).add_prefix('s_')
-slow = slow[~slow.index.duplicated(keep='first')] # in some (rare) cases the dot retained is not the slowest one
+
+features = ['f_min_dist_micron', 'f_min_dist_range', 'f_total_min_dist', 'f_slope_min_dist_micron',
+            'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_persistence', 'f_total_displacement']
+
+'''
+# fast / slow
+
+fast = chr1[chr1['f_fastest_mask'] == 1].reset_index(level=1).add_prefix('f_')
+slow = chr1[chr1['f_fastest_mask'] == 0].reset_index(level=1).add_prefix('s_')
+slow = slow[~slow.index.duplicated(keep='first')]  # in some (rare) cases the dot retained is not the slowest one
 speed = pd.concat([fast, slow], axis=1).dropna()
+
+speed = speed[speed["f_t_time"] < 40]
+for i in features:
+    fig = sns.lmplot(x='s_' + i, y='f_' + i, hue='f_t_serum_conc_percent', data=speed)
+    fig.savefig('C:/Users/redchuk/python/temp/temp_n_track_RF/summry20210923/r_sq/'+str(i)+'.png')
+    plt.close()
+'''
+
+# central / peripheral
+
+central = chr1[chr1['f_most_central_mask'] == 1].reset_index(level=1).add_prefix('c_')
+peripheral = chr1[chr1['f_most_central_mask'] == 0].reset_index(level=1).add_prefix('p_')
+peripheral = peripheral[~peripheral.index.duplicated(keep='first')]
+c_p = pd.concat([central, peripheral], axis=1).dropna()
+
+c_p = c_p[c_p['c_t_time'] < 40]
+for i in features:
+    fig = sns.lmplot(x='p_' + i, y='c_' + i, hue='c_t_serum_conc_percent', data=c_p)
+    fig.savefig('C:/Users/redchuk/python/temp/temp_n_track_RF/summry20210923/r_sq/'+str(i)+'.png')
+    plt.close()
