@@ -70,7 +70,7 @@ multi_2group.mean_diff.plot(raw_marker_size=3,
                             swarm_label=feature,
                             color_col=hue,
                             swarm_desat=1,
-                            # custom_palette=('tab10'),
+                            custom_palette=('tab10'),
                             # swarm_ylim=(-0.05, 0.05),
                             )
 
