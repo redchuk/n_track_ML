@@ -2,6 +2,7 @@ import pandas as pd
 import dabest
 import seaborn as sns
 from matplotlib import pyplot as plt
+from numpy import mean, median
 
 data_to_plot = pd.read_csv('scripts/data_sterile_f67592f.csv')
 # data_to_plot = data_to_plot[data_to_plot['f_outliers2SD_diff_xy'] > 1] # outliers only
@@ -114,3 +115,33 @@ for i in features:
     fig = sns.lmplot(x='p_' + i, y='c_' + i, data=c_p)
     fig.savefig('C:/Users/redchuk/python/temp/temp_n_track_RF/summry20210923/r_sq/'+'cp_'+str(i)+'.png')
     plt.close()
+
+"""
+Plotting fixed cells data (obtained by Olli Natri)
+
+"""
+
+fixed_data = pd.read_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/fixed/fixed_data_combined_20200730.csv')
+fixed_data['chromosome'] = fixed_data['guide'].str[:4]
+fixed_data = fixed_data[~fixed_data['date'].isin(['23.10.2019'])]
+# ['23.10.2019', '14.1.2020', '14.5.2020', '23.7.2020']
+
+violin = sns.catplot(
+    data=fixed_data,
+    kind='violin',
+    x='chromosome',
+    y='min_dist_micron',
+    hue='time',
+    split=True,
+    )
+violin.set(ylim=(0,None))
+
+box = sns.catplot(
+    data=fixed_data,
+    kind='bar',
+    x='chromosome',
+    y='min_dist_micron',
+    hue='time',
+    estimator=mean,
+    ci = None
+    )
