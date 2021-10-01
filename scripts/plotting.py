@@ -133,6 +133,7 @@ violin = sns.catplot(
     y='min_dist_micron',
     hue='time',
     split=True,
+    inner='quartiles',
     )
 violin.set(ylim=(0,None))
 
@@ -143,5 +144,15 @@ box = sns.catplot(
     y='min_dist_micron',
     hue='time',
     estimator=mean,
-    ci = None
+    ci=None
     )
+
+"""
+Bar graphs for shells, fixed cells, chr 1 (Olli's 20200114)
+
+"""
+
+serum = [0, 2, 10, 24, 32]
+starvation = [0, 6, 14, 27, 31]
+bars = pd.DataFrame({'10%': serum, '0.3%': starvation})
+bars_norm = bars/bars.sum()
