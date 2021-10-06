@@ -11,11 +11,11 @@ from sklearn.ensemble import GradientBoostingClassifier
 read the data 
 '''
 
-data = pd.read_csv('scripts/63455ea_data_chromatin_live.csv')
+data = pd.read_csv('scripts/a286935_data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
 data = data[~data["comment"].isin(["H2B"])]
-data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
-#data = data[data["time"] < 40]
+#data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
+data = data[data["time"] < 40]
 
 # initial filtering based on experimental setup
 
