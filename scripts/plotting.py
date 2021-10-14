@@ -3,6 +3,8 @@ import dabest
 import seaborn as sns
 from matplotlib import pyplot as plt
 from numpy import mean, median
+import math
+from scipy import stats
 
 data_to_plot = pd.read_csv('scripts/data_sterile_f67592f.csv')
 # data_to_plot = data_to_plot[data_to_plot['f_outliers2SD_diff_xy'] > 1] # outliers only
@@ -41,7 +43,7 @@ Guides:
 
 '''
 
-feature = 'f_min_dist_micron'
+feature = 'f_area_micron'
 hue = 'f_outliers2SD_diff_xy'
 
 chr1 = gen_set(data_to_plot, chr_name='chr1', parameter=feature, guides='1398|1514')
@@ -51,30 +53,29 @@ chrX = gen_set(data_to_plot, chr_name='chrX', parameter=feature, guides='1406')
 telo = gen_set(data_to_plot, chr_name='telo', parameter=feature, guides='1362')
 
 all_chr = pd.concat([chr1,
-                     chr10,
-                     chr13,
-                     chrX,
+                     # chr10,
+                     # chr13,
+                     # chrX,
                      telo,
                      data_to_plot[hue]], axis=1)
 # all_chr.columns
 
 multi_2group = dabest.load(all_chr, idx=(('chr1, 10%', 'chr1, 0.3%'),
-                                         ('chr10, 10%', 'chr10, 0.3%'),
-                                         ('chr13, 10%', 'chr13, 0.3%'),
-                                         ('chrX, 10%', 'chrX, 0.3%'),
+                                         # ('chr10, 10%', 'chr10, 0.3%'),
+                                         # ('chr13, 10%', 'chr13, 0.3%'),
+                                         # ('chrX, 10%', 'chrX, 0.3%'),
                                          ('telo, 10%', 'telo, 0.3%'),
                                          ))
-
+# CI is 95% by default in dabest
 
 multi_2group.mean_diff.plot(raw_marker_size=3,
                             es_marker_size=6,
                             swarm_label=feature,
-                            color_col=hue,
+                            # color_col=hue,
                             swarm_desat=1,
-                            custom_palette=('tab10'),
+                            custom_palette='Paired',
                             # swarm_ylim=(-0.05, 0.05),
                             )
-
 
 """
 Plotting the correlations in serum and in starvation, to check for homolog_chr-specific behaviour
@@ -85,8 +86,10 @@ Chromosome 1 only
 chr1 = data_to_plot[data_to_plot["t_guide"].str.contains('1398|1514', regex=True)]
 chr1.set_index(['file', 'particle'], inplace=True)
 
-features = ['f_min_dist_micron', 'f_min_dist_range', 'f_total_min_dist', 'f_slope_min_dist_micron',
-            'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_persistence', 'f_total_displacement']
+#features = ['f_min_dist_micron', 'f_min_dist_range', 'f_total_min_dist', 'f_slope_min_dist_micron',
+#            'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_persistence', 'f_total_displacement']
+
+features = ['f_total_min_dist', 'f_mean_diff_xy_micron', 'f_total_displacement']
 
 
 # fast / slow
@@ -99,9 +102,8 @@ speed = pd.concat([fast, slow], axis=1).dropna()
 speed = speed[speed["f_t_time"] < 40]
 for i in features:
     fig = sns.lmplot(x='s_' + i, y='f_' + i, data=speed)
-    fig.savefig('C:/Users/redchuk/python/temp/temp_n_track_RF/summry20210923/r_sq/'+'fs_'+str(i)+'.png')
+    fig.savefig('C:/Users/redchuk/python/temp/temp_n_track_RF/summry20210923/r_sq/' + 'fs_' + str(i) + '.png')
     plt.close()
-
 
 # central / peripheral
 
@@ -110,10 +112,18 @@ peripheral = chr1[chr1['f_most_central_mask'] == 0].reset_index(level=1).add_pre
 peripheral = peripheral[~peripheral.index.duplicated(keep='first')]
 c_p = pd.concat([central, peripheral], axis=1).dropna()
 
+# Pearson coefficient works with a linear relationship whereas the Spearman works with all monotonic relationships
+
 c_p = c_p[c_p['c_t_time'] < 40]
 for i in features:
-    fig = sns.lmplot(x='p_' + i, y='c_' + i, data=c_p)
-    fig.savefig('C:/Users/redchuk/python/temp/temp_n_track_RF/summry20210923/r_sq/'+'cp_'+str(i)+'.png')
+    spear, spval = stats.spearmanr(a=c_p['p_' + i], b=c_p['c_' + i])
+
+    fig = sns.lmplot(x='p_' + i, y='c_' + i, data=c_p, aspect=1)
+    #fig.set(xlim=(0, 1.1))
+    #fig.set(ylim=(0, 1.1))
+    # .set_axis_labels
+    plt.title('spear='+str(spear)+', p='+str(spval))
+    fig.savefig('C:/Users/redchuk/python/temp/temp_n_track_RF/summry20210923/r_sq/' + 'cp_' + str(i) + '.png')
     plt.close()
 
 """
@@ -134,8 +144,8 @@ violin = sns.catplot(
     hue='time',
     split=True,
     inner='quartiles',
-    )
-violin.set(ylim=(0,None))
+)
+violin.set(ylim=(0, None))
 
 box = sns.catplot(
     data=fixed_data,
@@ -145,7 +155,7 @@ box = sns.catplot(
     hue='time',
     estimator=mean,
     ci=None
-    )
+)
 
 """
 Bar graphs for shells, fixed cells, chr 1 (Olli's 20200114)
@@ -155,4 +165,41 @@ Bar graphs for shells, fixed cells, chr 1 (Olli's 20200114)
 serum = [0, 2, 10, 24, 32]
 starvation = [0, 6, 14, 27, 31]
 bars = pd.DataFrame({'10%': serum, '0.3%': starvation})
-bars_norm = bars/bars.sum()
+bars_norm = bars / bars.sum()
+
+"""
+Morphology plotting
+
+"""
+
+# feature = 'f_perimeter_au_norm'
+feature = 'circularity'
+
+morph_plot = pd.read_csv('scripts/data_sterile_f67592f.csv')
+morph_plot = morph_plot.groupby(['file']).agg({'f_area_micron': 'first',
+                                               'f_perimeter_au_norm': 'first',
+                                               't_time': 'first',
+                                               't_guide': 'first',
+                                               't_serum_conc_percent': 'first',
+                                               })
+
+morph_plot['circularity'] = 4 * math.pi * morph_plot['f_area_micron'] / morph_plot['f_perimeter_au_norm'] ** 2
+morph_plot['circularity'] = morph_plot['circularity'] / morph_plot['circularity'].max()
+
+# Circularity = (4 * pi * Area) / Perimeter^2
+# since we have perimeter in au, we have to divide by max to get something circularity-ish
+
+chr1_telo = gen_set(morph_plot, chr_name='morph', parameter=feature, guides='1398|1514|1362')
+
+two_group = dabest.load(chr1_telo, idx=(('morph, 10%', 'morph, 0.3%'),
+                                        ))
+# CI is 95% by default in dabest
+
+two_group.mean_diff.plot(raw_marker_size=4,
+                         es_marker_size=6,
+                         swarm_label=feature,
+                         # color_col=hue,
+                         swarm_desat=1,
+                         custom_palette='Paired',
+                         swarm_ylim=(0, 1),
+                         )
