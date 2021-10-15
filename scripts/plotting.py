@@ -86,8 +86,9 @@ Chromosome 1 only
 chr1 = data_to_plot[data_to_plot["t_guide"].str.contains('1398|1514', regex=True)]
 chr1.set_index(['file', 'particle'], inplace=True)
 
-#features = ['f_min_dist_micron', 'f_min_dist_range', 'f_total_min_dist', 'f_slope_min_dist_micron',
-#            'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_persistence', 'f_total_displacement']
+#features = ['f_min_dist_micron', 'f_min_dist_range', 'f_total_min_dist',
+# 'f_slope_min_dist_micron', 'f_mean_diff_xy_micron', 'f_max_diff_xy_micron',
+# 'f_persistence', 'f_total_displacement']
 
 features = ['f_total_min_dist', 'f_mean_diff_xy_micron', 'f_total_displacement']
 
