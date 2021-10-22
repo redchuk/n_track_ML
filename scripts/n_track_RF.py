@@ -123,7 +123,7 @@ corr_features = data_sterile.corr()
 
 ''' 
 Train / test split
-'''
+!!! train/test split is deprecated, cross-val with whole dataset is used from now on
 
 tst = int((data_sterile['file'].unique().shape[0]) / 5)
 # nuclei number to choose for testing
@@ -132,6 +132,10 @@ test_choice = np.random.RandomState(4242).choice(data_sterile['file'].unique(), 
 test_data = data_sterile[data_sterile['file'].isin(test_choice)]
 train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
 train_data = train_data.dropna()
+
+X = train_data[features]
+y = train_data['t_serum_conc_percent'].astype('str')
+'''
 
 features = [
            'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_var_diff_xy_micron',
@@ -144,12 +148,9 @@ features = [
            'f_outliers3SD_diff_xy'
             ]
 
-
-
-
-X = train_data[features]
-
-y = train_data['t_serum_conc_percent'].astype('str')
+X = data_sterile[features]
+y = data_sterile['t_serum_conc_percent']#.astype('str')
+y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 
 ''' 
 Random forest
@@ -177,19 +178,19 @@ Gradient boosting trees
 '''
 
 boosted_forest = GradientBoostingClassifier(n_estimators=1000, random_state=0)
-gkf = GroupKFold(n_splits=3)
-print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
+gkf = GroupKFold(n_splits=4)
+# print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
 
 b_param_grid = {'learning_rate': [0.001, 0.01, 0.1, 1, 10],
                 'max_depth': [1, 2, 3, 5, 10]}
 
 grid_b_forest = GradientBoostingClassifier(n_estimators=1000)
 b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf)
-b_grid_search.fit(X, y, groups=train_data['file'])
+b_grid_search.fit(X, y, groups=data_sterile['file'])
 b_grid_forest_results = pd.DataFrame(b_grid_search.cv_results_)
 forest_b_importances = b_grid_search.best_estimator_.feature_importances_
 
-forests_comp = pd.DataFrame({'RF': forest_importances, 'GBC': forest_b_importances}, index=X.columns)
+# forests_comp = pd.DataFrame({'RF': forest_importances, 'GBC': forest_b_importances}, index=X.columns)
 # forests_comp.plot(kind='bar')
 # compare importances for forest types
 
@@ -201,15 +202,17 @@ b_pvt = pd.pivot_table(b_grid_forest_results,
                        index='param_learning_rate',
                        columns='param_max_depth')
 
+'''
 rf_pvt = pd.pivot_table(grid_forest_results,
                         values='mean_test_score',
                         index='param_max_features',
                         columns='param_max_depth')
+'''
 
 ''' 
 Plotting forests results
 '''
 
-data_to_predict = data_sterile[features]
-data_sterile['predicted_boosted'] = b_grid_search.best_estimator_.predict(data_sterile[features]).astype(float)
+#data_to_predict = data_sterile[features]
+#data_sterile['predicted_boosted'] = b_grid_search.best_estimator_.predict(data_sterile[features]).astype(float)
 #data_sterile.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_predict66.csv')
