@@ -51,7 +51,12 @@ data_agg = data.groupby(['file', 'particle']).agg(t_guide=('guide', 'first'),
                                                   max_min_dist_micron=('min_dist_micron', 'max'),
                                                   beg_min_dist_micron=('min_dist_micron', 'first'),
                                                   end_min_dist_micron=('min_dist_micron', 'last'),
+                                                  f_var_dist_micron=('min_dist_micron', 'var'),
                                                   )
+
+data_agg['f_Rvar_diff_xy_micron'] = data_agg['f_var_diff_xy_micron']/data_agg['f_mean_diff_xy_micron']
+data_agg['f_Rvar_dist_micron'] = data_agg['f_var_dist_micron']/data_agg['f_min_dist_micron']
+# Relative variance
 
 data_agg['f_total_displacement'] = np.sqrt((data_agg['sum_diff_x_micron']) ** 2 + (data_agg['sum_diff_y_micron']) ** 2)
 # distance from first to last coordinate
@@ -110,8 +115,10 @@ data_sterile = data_agg.drop(['sum_diff_x_micron',
                               'end_min_dist_micron',
                               'file_mean_diff_xy_micron',
                               'file_max_min_dist_micron',
+                              'f_sum_diff_xy_micron', # proportional to f_mean_diff_xy_micron, thus, useless
                               ], axis=1)
 data_sterile.reset_index(inplace=True)
+corr_features = data_sterile.corr()
 # cleaning up
 
 ''' 
@@ -126,13 +133,18 @@ test_data = data_sterile[data_sterile['file'].isin(test_choice)]
 train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
 train_data = train_data.dropna()
 
-features = ['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
-                'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
-                'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
-                'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
-                'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
-                'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-                'f_outliers3SD_diff_xy']
+features = [
+           'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_var_diff_xy_micron',
+           'f_area_micron', 'f_perimeter_au_norm', 'f_min_dist_micron',
+           'f_var_dist_micron', 'f_Rvar_diff_xy_micron', 'f_Rvar_dist_micron',
+           'f_total_displacement', 'f_persistence', 'f_fastest_mask',
+           'f_min_dist_range', 'f_total_min_dist', 'f_most_central_mask',
+           'f_slope_min_dist_micron', 'f_slope_area_micron',
+           'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
+           'f_outliers3SD_diff_xy'
+            ]
+
+
 
 
 X = train_data[features]
