@@ -7,6 +7,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 
+
 ''' 
 read the data 
 '''
@@ -181,8 +182,8 @@ boosted_forest = GradientBoostingClassifier(n_estimators=1000, random_state=0)
 gkf = GroupKFold(n_splits=4)
 # print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
 
-b_param_grid = {'learning_rate': [0.001, 0.01, 0.1, 1, 10],
-                'max_depth': [1, 2, 3, 5, 10]}
+b_param_grid = {'learning_rate': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10],
+                'max_depth': [1, 2, 3, 4, 5, 10, 20, 30, 40]}
 
 grid_b_forest = GradientBoostingClassifier(n_estimators=1000)
 b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf)
@@ -201,6 +202,7 @@ b_pvt = pd.pivot_table(b_grid_forest_results,
                        values='mean_test_score',
                        index='param_learning_rate',
                        columns='param_max_depth')
+# sns.heatmap(b_pvt, annot = True)
 
 '''
 rf_pvt = pd.pivot_table(grid_forest_results,
