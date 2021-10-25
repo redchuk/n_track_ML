@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import linregress
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
@@ -152,6 +153,24 @@ features = [
 X = data_sterile[features]
 y = data_sterile['t_serum_conc_percent']#.astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
+
+''' 
+Baseline performance estimation
+'''
+
+tree = DecisionTreeClassifier(random_state=0, max_depth=1)
+gkf = GroupKFold(n_splits=4)
+trees = pd.DataFrame()
+for feature in features:
+    trees[feature] = cross_val_score(tree, X[feature].values.reshape(-1, 1), y,
+                                                      cv=gkf, groups=data_sterile['file'])
+
+trees = trees.transpose()
+trees['mean score'] = trees.mean(axis=1)
+
+# check other metrics? ROC?
+# check how predictions look like (they look different for GBC)
+
 
 ''' 
 Random forest
