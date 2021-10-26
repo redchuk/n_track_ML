@@ -160,17 +160,19 @@ Baseline performance estimation
 
 tree = DecisionTreeClassifier(random_state=0, max_depth=1)
 gkf = GroupKFold(n_splits=4)
-trees = pd.DataFrame()
-for feature in features:
-    trees[feature] = cross_val_score(tree, X[feature].values.reshape(-1, 1), y,
-                                                      cv=gkf, groups=data_sterile['file'])
 
-trees = trees.transpose()
-trees['mean score'] = trees.mean(axis=1)
+metrics = ['accuracy', 'precision', 'recall', 'f1']
+baseline_scores = pd.DataFrame()
+for metric in metrics:
+    trees = pd.DataFrame()
+    for feature in features:
+        trees[feature] = cross_val_score(tree, X[feature].values.reshape(-1, 1), y,
+                                                        cv=gkf, groups=data_sterile['file'],
+                                                        scoring=metric
+                                                        )
 
-# check other metrics? ROC?
-# check how predictions look like (they look different for GBC)
-
+    trees = trees.transpose()
+    baseline_scores[metric] = trees.mean(axis=1)
 
 ''' 
 Random forest
