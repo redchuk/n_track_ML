@@ -174,7 +174,6 @@ for i in range(30):
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
 
     model.compile(optimizer='adam',
