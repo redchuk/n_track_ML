@@ -19,11 +19,12 @@ from keras.layers import Dropout
 read the data 
 '''
 
-data = pd.read_csv('scripts/63455ea_data_chromatin_live.csv')
+data = pd.read_csv('scripts/a286935_data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
 data = data[~data["comment"].isin(["H2B"])]
 data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
 data = data[data["time"] < 40]
+
 # initial filtering based on experimental setup
 
 ''' 
@@ -58,7 +59,12 @@ data_agg = data.groupby(['file', 'particle']).agg(t_guide=('guide', 'first'),
                                                   max_min_dist_micron=('min_dist_micron', 'max'),
                                                   beg_min_dist_micron=('min_dist_micron', 'first'),
                                                   end_min_dist_micron=('min_dist_micron', 'last'),
+                                                  f_var_dist_micron=('min_dist_micron', 'var'),
                                                   )
+
+data_agg['f_Rvar_diff_xy_micron'] = data_agg['f_var_diff_xy_micron']/data_agg['f_mean_diff_xy_micron']
+data_agg['f_Rvar_dist_micron'] = data_agg['f_var_dist_micron']/data_agg['f_min_dist_micron']
+# Relative variance
 
 data_agg['f_total_displacement'] = np.sqrt((data_agg['sum_diff_x_micron']) ** 2 + (data_agg['sum_diff_y_micron']) ** 2)
 # distance from first to last coordinate
@@ -117,32 +123,28 @@ data_sterile = data_agg.drop(['sum_diff_x_micron',
                               'end_min_dist_micron',
                               'file_mean_diff_xy_micron',
                               'file_max_min_dist_micron',
+                              'f_sum_diff_xy_micron', # proportional to f_mean_diff_xy_micron, thus, useless
                               ], axis=1)
 data_sterile.reset_index(inplace=True)
-# cleaning up
+corr_features = data_sterile.corr()
 
 ''' 
 Train / test split
 '''
 
-features = ['f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_sum_diff_xy_micron',
-                'f_var_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm',
-                'f_min_dist_micron', 'f_total_displacement', 'f_persistence',
-                'f_fastest_mask', 'f_min_dist_range', 'f_total_min_dist',
-                'f_most_central_mask', 'f_slope_min_dist_micron', 'f_slope_area_micron',
-                'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-                'f_outliers3SD_diff_xy']
-
-'''features = ['f_mean_diff_xy_micron', 'f_sum_diff_xy_micron',
-                'f_area_micron', 'f_perimeter_au_norm',
-                'f_persistence',
-                'f_min_dist_range', 'f_total_min_dist',
-                'f_slope_area_micron',
-                'f_slope_perimeter_au_norm']
-# important from gradient boosted'''
+features = [
+           'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_var_diff_xy_micron',
+           'f_area_micron', 'f_perimeter_au_norm', 'f_min_dist_micron',
+           'f_var_dist_micron', 'f_Rvar_diff_xy_micron', 'f_Rvar_dist_micron',
+           'f_total_displacement', 'f_persistence', 'f_fastest_mask',
+           'f_min_dist_range', 'f_total_min_dist', 'f_most_central_mask',
+           'f_slope_min_dist_micron', 'f_slope_area_micron',
+           'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
+           'f_outliers3SD_diff_xy'
+            ]
 
 
-tst = int((data_sterile['file'].unique().shape[0]) / 3)
+tst = int((data_sterile['file'].unique().shape[0]) / 4)
 # nuclei number to choose for testing
 
 # test_choice = np.random.RandomState(7).choice(data_sterile['file'].unique(), tst, replace=False)
@@ -169,12 +171,9 @@ for i in range(30):
     X_test_norm = X_test / X.max(axis=0)  # devided by X.max but not X_test.max, so that normalization is the same
 
     model = models.Sequential()
-    model.add(layers.Dense(128, activation='relu'))
-    #model.add(layers.Dropout(0.4))
-    model.add(layers.Dense(128, activation='relu'))
-    #model.add(layers.Dropout(0.4))
     model.add(layers.Dense(64, activation='relu'))
-    #model.add(layers.Dropout(0.4))
+    model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
 
@@ -196,5 +195,7 @@ for i in range(30):
     # print(1-y.sum()/len(y))
     print(1 - y_test.sum() / len(y_test))
 
-plt.plot(results)
+dnn_results=results.iloc[:,range(1,60,2)]
+dnn_results['mean']=dnn_results.mean(axis=1)
+plt.plot(dnn_results['mean'])
 plt.show()
