@@ -6,6 +6,7 @@ reduction, visualization, importance estimation.
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from matplotlib import pyplot as plt
 import seaborn as sns
 
 ''' 
@@ -40,16 +41,23 @@ X_scaled = scaler.fit_transform(X)
 Principal Component Analysis (PCA) as in Muller and Guido
 '''
 
-pca = PCA(n_components=2)
+pca = PCA()
 pca.fit(X_scaled)
 X_pca = pca.transform(X_scaled)
 
-to_plot = pd.DataFrame(X_pca, columns=['C1', 'C2'])
+to_plot = pd.DataFrame(X_pca).add_prefix('PC')
 to_plot['serum']=data['t_serum_conc_percent']
 
-# sns.relplot(data=to_plot, x='C1', y='C2', hue='serum')
-sns.displot(data=to_plot, x='C1', y='C2', hue='serum', kind="kde")
+# sns.relplot(data=to_plot, x='PC0', y='PC1', hue='serum')
+sns.displot(data=to_plot, x='PC0', y='PC1', hue='serum', kind="kde")
 plt.show()
+
+
+'''
+add principal components to input DataFrame
+'''
+
+data_pca = data.join(pd.DataFrame(X_pca).add_prefix('PC'))
 
 
 
