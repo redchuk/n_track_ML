@@ -33,7 +33,7 @@ fset2 = [
 
 
 
-X = data[fset2]
+X = data[fset1]
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 

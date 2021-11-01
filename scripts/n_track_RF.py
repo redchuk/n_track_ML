@@ -212,6 +212,7 @@ b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf,
                              refit=False)
 b_grid_search.fit(X, y, groups=data_sterile['file'])
 b_grid_forest_results = pd.DataFrame(b_grid_search.cv_results_)
+
 # forest_b_importances = b_grid_search.best_estimator_.feature_importances_
 
 # forests_comp = pd.DataFrame({'RF': forest_importances, 'GBC': forest_b_importances}, index=X.columns)
@@ -221,11 +222,11 @@ b_grid_forest_results = pd.DataFrame(b_grid_search.cv_results_)
 # y.value_counts() # to check if classes are balanced
 # b_grid_forest_results.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_forest_results.csv')
 
-# b_pvt = pd.pivot_table(b_grid_forest_results,
-#                        values='mean_test_score',
-#                        index='param_learning_rate',
-#                        columns='param_max_depth')
-# sns.heatmap(b_pvt, annot = True)
+b_pvt = pd.pivot_table(b_grid_forest_results,
+                       values='mean_test_accuracy',
+                       index='param_learning_rate',
+                       columns='param_max_depth')
+sns.heatmap(b_pvt, annot = True)
 
 '''
 rf_pvt = pd.pivot_table(grid_forest_results,
