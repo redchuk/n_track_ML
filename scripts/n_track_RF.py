@@ -7,7 +7,8 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
-
+import seaborn as sns
+from matplotlib import pyplot as plt
 
 ''' 
 read the data 
@@ -56,8 +57,8 @@ data_agg = data.groupby(['file', 'particle']).agg(t_guide=('guide', 'first'),
                                                   f_var_dist_micron=('min_dist_micron', 'var'),
                                                   )
 
-data_agg['f_Rvar_diff_xy_micron'] = data_agg['f_var_diff_xy_micron']/data_agg['f_mean_diff_xy_micron']
-data_agg['f_Rvar_dist_micron'] = data_agg['f_var_dist_micron']/data_agg['f_min_dist_micron']
+data_agg['f_Rvar_diff_xy_micron'] = data_agg['f_var_diff_xy_micron'] / data_agg['f_mean_diff_xy_micron']
+data_agg['f_Rvar_dist_micron'] = data_agg['f_var_dist_micron'] / data_agg['f_min_dist_micron']
 # Relative variance
 
 data_agg['f_total_displacement'] = np.sqrt((data_agg['sum_diff_x_micron']) ** 2 + (data_agg['sum_diff_y_micron']) ** 2)
@@ -117,11 +118,15 @@ data_sterile = data_agg.drop(['sum_diff_x_micron',
                               'end_min_dist_micron',
                               'file_mean_diff_xy_micron',
                               'file_max_min_dist_micron',
-                              'f_sum_diff_xy_micron', # proportional to f_mean_diff_xy_micron, thus, useless
+                              'f_sum_diff_xy_micron',  # proportional to f_mean_diff_xy_micron, thus, useless
                               ], axis=1)
 data_sterile.reset_index(inplace=True)
 corr_features = data_sterile.corr()
 # cleaning up
+
+# data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
+# features = data_sterile.columns[7:]
+# to get data with principal components
 
 ''' 
 Train / test split
@@ -140,18 +145,18 @@ y = train_data['t_serum_conc_percent'].astype('str')
 '''
 
 features = [
-           'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_var_diff_xy_micron',
-           'f_area_micron', 'f_perimeter_au_norm', 'f_min_dist_micron',
-           'f_var_dist_micron', 'f_Rvar_diff_xy_micron', 'f_Rvar_dist_micron',
-           'f_total_displacement', 'f_persistence', 'f_fastest_mask',
-           'f_min_dist_range', 'f_total_min_dist', 'f_most_central_mask',
-           'f_slope_min_dist_micron', 'f_slope_area_micron',
-           'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
-           'f_outliers3SD_diff_xy'
-            ]
+    'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_var_diff_xy_micron',
+    'f_area_micron', 'f_perimeter_au_norm', 'f_min_dist_micron',
+    'f_var_dist_micron', 'f_Rvar_diff_xy_micron', 'f_Rvar_dist_micron',
+    'f_total_displacement', 'f_persistence', 'f_fastest_mask',
+    'f_min_dist_range', 'f_total_min_dist', 'f_most_central_mask',
+    'f_slope_min_dist_micron', 'f_slope_area_micron',
+    'f_slope_perimeter_au_norm', 'f_outliers2SD_diff_xy',
+    'f_outliers3SD_diff_xy'
+]
 
 X = data_sterile[features]
-y = data_sterile['t_serum_conc_percent']#.astype('str')
+y = data_sterile['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 
 ''' 
@@ -166,13 +171,23 @@ baseline_scores = pd.DataFrame()
 for metric in metrics:
     trees = pd.DataFrame()
     for feature in features:
-        trees[feature] = cross_val_score(tree, X[feature].values.reshape(-1, 1), y,
-                                                        cv=gkf, groups=data_sterile['file'],
-                                                        scoring=metric
-                                                        )
+        trees[feature] = cross_val_score(tree, X[feature].values.reshape(-1, 1), y,  # worked, now returns index error
+                                         cv=gkf, groups=data_sterile['file'],
+                                         scoring=metric
+                                         )
 
     trees = trees.transpose()
     baseline_scores[metric] = trees.mean(axis=1)
+
+# since 1-level decision tree cannot overfit, we can train and score without cross-validation?
+
+
+trees_noCV = []
+for feature in features:
+    tree_noCV = DecisionTreeClassifier(random_state=0, max_depth=1)
+    trees_noCV[feature] = tree_noCV.fit(X[feature].values.reshape(-1, 1), y).score(X[feature].values.reshape(-1, 1), y)
+
+trees_noCV = trees_noCV.transpose()
 
 ''' 
 Random forest
@@ -226,7 +241,9 @@ b_pvt = pd.pivot_table(b_grid_forest_results,
                        values='mean_test_accuracy',
                        index='param_learning_rate',
                        columns='param_max_depth')
-sns.heatmap(b_pvt, annot = True)
+sns.heatmap(b_pvt, annot=True)
+plt.show()
+plt.close()
 
 '''
 rf_pvt = pd.pivot_table(grid_forest_results,
@@ -239,6 +256,6 @@ rf_pvt = pd.pivot_table(grid_forest_results,
 Plotting forests results
 '''
 
-#data_to_predict = data_sterile[features]
-#data_sterile['predicted_boosted'] = b_grid_search.best_estimator_.predict(data_sterile[features]).astype(float)
-#data_sterile.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_predict66.csv')
+# data_to_predict = data_sterile[features]
+# data_sterile['predicted_boosted'] = b_grid_search.best_estimator_.predict(data_sterile[features]).astype(float)
+# data_sterile.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_predict66.csv')
