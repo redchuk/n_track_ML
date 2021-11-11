@@ -14,10 +14,30 @@ from sklearn.model_selection import cross_val_score
 
 ''' 
 read the data 
+
 '''
+data = pd.read_csv('scripts/a286935_data_chromatin_live.csv')
+data = data[~data["comment"].isin(["stress_control"])]
+data = data[~data["comment"].isin(["H2B"])]
+data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
+data = data[data["time"] < 40]
+data.set_index(['file', 'particle'], inplace=True)
+
+# original data before aggregation
 
 data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
-features = data_sterile.columns[7:]
+data_sterile.set_index(['file', 'particle'], inplace=True)
+
+# data after aggregation and feature engineering
+
+# broadcast the engineered features to original time series
+
+# create feature sets, 'original', 'all'
+
+
+
+
+
 
 ''' 
 data preprocessing 
@@ -40,7 +60,7 @@ def create_model():
     model = models.Sequential()
     model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(64, activation='relu'))
-    #model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
 
     model.compile(optimizer='adam',
