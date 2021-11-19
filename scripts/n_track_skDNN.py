@@ -22,21 +22,29 @@ data = data[~data["comment"].isin(["H2B"])]
 data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
 data = data[data["time"] < 40]
 data.set_index(['file', 'particle'], inplace=True)
-
 # original data before aggregation
+
+fr_in_ind = data.index.value_counts()
+dots_to_drop = fr_in_ind[fr_in_ind < 30]
+data.drop(dots_to_drop.index, inplace=True)
+# check for dots with less than 30 frames
+
+data.set_index('frame', append=True, inplace=True)
+data = data[['diff_xy_micron', 'area_micron', 'perimeter_au_norm', 'min_dist_micron']]
+# filter features
+
+data = data.unstack()
+data.drop(('diff_xy_micron', 0), axis=1, inplace=True) # drop first delta 'diff_xy_micron', which is NaN
+# reshape
+# flatten column index?
+
 
 data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
 data_sterile.set_index(['file', 'particle'], inplace=True)
-
 # data after aggregation and feature engineering
+# drop those with less than 30 frames
 
-# broadcast the engineered features to original time series
-
-# create feature sets, 'original', 'all'
-
-
-
-
+# np concatenate (check axis!)
 
 
 ''' 
@@ -68,10 +76,10 @@ def create_model():
                   metrics=['accuracy'])
     return model
 
+
 ''' 
 use model with sklearn cross-val
 '''
-
 
 model = KerasClassifier(build_fn=create_model, epochs=500, verbose=0)
 # batch size?
