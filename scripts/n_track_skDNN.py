@@ -35,16 +35,22 @@ data = data[['diff_xy_micron', 'area_micron', 'perimeter_au_norm', 'min_dist_mic
 
 data = data.unstack()
 data.drop(('diff_xy_micron', 0), axis=1, inplace=True) # drop first delta 'diff_xy_micron', which is NaN
+data.columns = data.columns.to_flat_index() # needed for concat
 # reshape
 # flatten column index?
 
 
 data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
 data_sterile.set_index(['file', 'particle'], inplace=True)
+features = data_sterile.columns[4:]
+data_sterile = data_sterile[features]
 # data after aggregation and feature engineering
+
+data_sterile.drop(dots_to_drop.index, inplace=True)
 # drop those with less than 30 frames
 
-# np concatenate (check axis!)
+data_raw = data_sterile.join(data)
+# concatenate
 
 
 ''' 
