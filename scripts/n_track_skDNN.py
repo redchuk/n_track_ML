@@ -33,12 +33,9 @@ data.set_index('frame', append=True, inplace=True)
 data = data[['diff_xy_micron', 'area_micron', 'perimeter_au_norm', 'min_dist_micron']]
 # filter features
 
-data = data.unstack()
-data.drop(('diff_xy_micron', 0), axis=1, inplace=True) # drop first delta 'diff_xy_micron', which is NaN
-data.columns = data.columns.to_flat_index() # needed for concat
-# reshape
-# flatten column index?
-
+data = data.unstack()  # reshape
+data.drop(('diff_xy_micron', 0), axis=1, inplace=True)  # drop first delta 'diff_xy_micron', which is NaN
+data.columns = data.columns.to_flat_index()  # needed for concat
 
 data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
 data_sterile.set_index(['file', 'particle'], inplace=True)
@@ -57,25 +54,34 @@ data_raw = data_sterile.join(data)
 data preprocessing 
 '''
 
-X = data_sterile[features]
+X = data_raw[data_raw.columns[1:]]
 X_norm = X / X.max(axis=0)
 
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-y = ((data_sterile['t_serum_conc_percent']) / 10).astype('int')
+y = ((data_raw['t_serum_conc_percent']) / 10).astype('int')
 
 ''' 
 building keras model
+
+technically it is possible to gridsearch through hidden layers number as hyperparameter
+https://stackoverflow.com/questions/47788799/grid-search-the-number-of-hidden-layers-with-keras
+
 '''
 
 
 def create_model():
     model = models.Sequential()
-    model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
+
 
     model.compile(optimizer='adam',
                   loss='binary_crossentropy',
@@ -86,13 +92,13 @@ def create_model():
 ''' 
 use model with sklearn cross-val
 '''
+for k in range(5, 1005, 5):  # takes an eternity, needed to check for accuracy 'degradation' due to overfitting
+    model = KerasClassifier(build_fn=create_model, epochs=k, verbose=0)
+    gkf = GroupKFold(n_splits=4)
+    results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
+    for i in range(10):  # repeated CV, since one iteration gives too unstable results
+        scores = cross_val_score(model, X_norm, y, cv=gkf, groups=data_raw.reset_index()['file'])
+        results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
 
-model = KerasClassifier(build_fn=create_model, epochs=500, verbose=0)
-# batch size?
-gkf = GroupKFold(n_splits=4)
-results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
-for i in range(10):
-    scores = cross_val_score(model, X_norm, y, cv=gkf, groups=data_sterile['file'])
-    results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
 
-# this gives accuracy 0.6223815754055977
+    print(str(k) + ' epochs: ' + str(results.mean().mean()))
