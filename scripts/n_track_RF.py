@@ -265,18 +265,19 @@ Custom-made leave-one-group-out
 '''
 
 data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
+data_sterile.set_index(['file', 'particle'], drop=False, inplace=True)
 features = data_sterile.columns[7:]
-
+'''
 X = data_sterile[features]
 y = data_sterile['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
-
+'''
 boosted_forest = GradientBoostingClassifier(n_estimators=1000, random_state=62)
 gkf = GroupKFold(n_splits=153)
-
+'''
 loo = cross_val_score(boosted_forest, X, y, cv=gkf, groups=data_sterile['file'])
-np.mean(loo)
-# this is no weighted by number of samples, so I'll need manual LOO to predict
+np.mean(loo)'''
+# this is not weighted by number of samples, so I'll need manual LOO to predict
 
 for inx in data_sterile['file'].unique():
     train_data = data_sterile[~data_sterile['file'].isin([inx])]
@@ -285,4 +286,9 @@ for inx in data_sterile['file'].unique():
     y = train_data['t_serum_conc_percent']  # .astype('str')
     y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
     boosted_forest.fit(X, y)
-    boosted_forest.predict(test_data[features])
+    for ii in test_data.index:
+        predicted = boosted_forest.predict(test_data.loc[ii, features].values.reshape(1, -1))[0]
+        data_sterile.loc[ii, 'gbc_predicted'] = predicted
+        print(predicted)
+
+
