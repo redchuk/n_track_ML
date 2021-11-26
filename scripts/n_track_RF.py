@@ -272,7 +272,7 @@ X = data_sterile[features]
 y = data_sterile['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 '''
-boosted_forest = GradientBoostingClassifier(n_estimators=1000, random_state=62)
+boosted_forest = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.001, max_depth=4, random_state=62)
 gkf = GroupKFold(n_splits=153)
 '''
 loo = cross_val_score(boosted_forest, X, y, cv=gkf, groups=data_sterile['file'])
@@ -288,7 +288,12 @@ for inx in data_sterile['file'].unique():
     boosted_forest.fit(X, y)
     for ii in test_data.index:
         predicted = boosted_forest.predict(test_data.loc[ii, features].values.reshape(1, -1))[0]
-        data_sterile.loc[ii, 'gbc_predicted'] = predicted
+        data_sterile.loc[ii, '5c1e1b74_gbc_predicted'] = predicted
         print(predicted)
 
-
+comp = ((data_sterile['t_serum_conc_percent']/ 10).astype('int')==data_sterile['5c1e1b74_gbc_predicted'])
+sum(comp)/302
+#  this gives accuracy 0.5529801324503312 for LOOCV,
+#  which is lower than accuracy estimated by (repeated) K-foldCV (k=4),
+#  discussed by others here
+#  https://stats.stackexchange.com/questions/61783/bias-and-variance-in-leave-one-out-vs-k-fold-cross-validation
