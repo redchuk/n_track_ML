@@ -102,3 +102,16 @@ for k in range(5, 1005, 5):  # takes an eternity, needed to check for accuracy '
 
 
     print(str(k) + ' epochs: ' + str(results.mean().mean()))
+
+''' 
+(one time version) use model with sklearn cross-val 
+'''
+
+model = KerasClassifier(build_fn=create_model, epochs=300, verbose=0)
+gkf = GroupKFold(n_splits=4)
+results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
+for i in range(10):  # repeated CV, since one iteration gives too unstable results
+    scores = cross_val_score(model, X_norm, y, cv=gkf, groups=data_raw.reset_index()['file'])
+    results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
+
+print(results.mean().mean())
