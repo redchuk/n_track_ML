@@ -1,5 +1,5 @@
 """
-This is to join pre-processing (PCA, UMAP (LDA?)) and gradient boosting classifier in a non leaky way
+This is to join pre-processing (PCA, UMAP (LDA?)) and gradient boosting classifier in a non-leaky way
 
 I want to add PCA, UMAP (and may be LDA?) to the feature set, but retain original features; next, preprocessing is
 to be combined with classifier using sklearn pipeline, so that it does not leak in CV.
@@ -25,6 +25,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
+import umap
 
 data = pd.read_csv('scripts/b212a935_Chr1_data_sterile.csv')
 
@@ -41,9 +42,37 @@ fset_no_masks = [
 ]
 # no masks
 
+fset_raw = [
+    'f_mean_diff_xy_micron', 'f_area_micron', 'f_perimeter_au_norm', 'f_min_dist_micron'
+]
+# raw
+
 X = data[fset_all]
 y = data['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
+
+"""
+UMAP just for visualisation 
+"""
+
+reducer = umap.UMAP()
+scaled_all = StandardScaler().fit_transform(data[fset_all])
+scaled_no_masks = StandardScaler().fit_transform(data[fset_no_masks])
+scaled_raw = StandardScaler().fit_transform(data[fset_raw])
+
+for i in [scaled_all, scaled_no_masks, scaled_raw]:
+    embedding = reducer.fit_transform(i)
+    sns.scatterplot(
+    embedding[:, 0],
+    embedding[:, 1], hue=y)
+    plt.show()
+    plt.close()
+
+
+
+"""
+adding PCA as features
+"""
 
 PCA_transformer = Pipeline(
     steps=[('scaler', StandardScaler()), ('PCA', PCA())]
