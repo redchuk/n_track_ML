@@ -52,7 +52,7 @@ y = data['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 
 """
-UMAP just for visualisation 
+UMAP just for visualisation  
 """
 
 reducer = umap.UMAP()
