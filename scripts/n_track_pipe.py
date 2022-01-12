@@ -25,7 +25,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
-import umap
+from umap import UMAP
 
 data = pd.read_csv('scripts/b212a935_Chr1_data_sterile.csv')
 
@@ -54,7 +54,7 @@ y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 """
 UMAP just for visualisation  
 """
-
+"""
 reducer = umap.UMAP()
 scaled_all = StandardScaler().fit_transform(data[fset_all])
 scaled_no_masks = StandardScaler().fit_transform(data[fset_no_masks])
@@ -67,21 +67,26 @@ for i in [scaled_all, scaled_no_masks, scaled_raw]:
     embedding[:, 1], hue=y)
     plt.show()
     plt.close()
-
+"""
 
 
 """
-adding PCA as features
+adding PCA and UMAP as features
 """
 
 PCA_transformer = Pipeline(
     steps=[('scaler', StandardScaler()), ('PCA', PCA())]
 )
 
+UMAP_transformer = Pipeline(
+    steps=[('scaler', StandardScaler()), ('UMAP', UMAP())]
+)
+
 c_transformer = ColumnTransformer(
     [('f_to_retain', SimpleImputer(missing_values=np.nan, strategy='mean'), fset_all),
      # (hopefully) does nothing, placed here to keep original features in pipeline output
-     ('PCA_scaled', PCA_transformer, fset_no_masks)]
+     ('PCA_scaled', PCA_transformer, fset_no_masks),
+     ('UMAP_scaled', UMAP_transformer, fset_no_masks)]
 )
 
 X_t = c_transformer.fit_transform(X)
