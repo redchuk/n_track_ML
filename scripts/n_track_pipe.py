@@ -93,14 +93,14 @@ X_t = c_transformer.fit_transform(X)
 # seems it works, is there an easy way to get feature names?
 
 """
-PCA + GBC pipeline
+PCA + UMAP + GBC pipeline
 """
 
 boosted_forest = GradientBoostingClassifier(n_estimators=1000)
 gkf = GroupKFold(n_splits=4)
 
 gbc_pipeline = Pipeline(
-    steps=[('preproc_PCA', c_transformer),
+    steps=[('preproc_PCA_UMAP', c_transformer),
            ('GBC', boosted_forest)]
 )
 
