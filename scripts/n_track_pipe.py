@@ -79,14 +79,14 @@ PCA_transformer = Pipeline(
 )
 
 UMAP_transformer = Pipeline(
-    steps=[('scaler', StandardScaler()), ('UMAP', UMAP())]
+    #steps=[('scaler', StandardScaler()), ('UMAP', UMAP(n_components=20))]
+    steps=[('scaler', 'passthrough'), ('UMAP', UMAP(n_components=4))] # no scaling
 )
-
 c_transformer = ColumnTransformer(
     [('f_to_retain', SimpleImputer(missing_values=np.nan, strategy='mean'), fset_all),
      # (hopefully) does nothing, placed here to keep original features in pipeline output
      ('PCA_scaled', PCA_transformer, fset_no_masks),
-     ('UMAP_scaled', UMAP_transformer, fset_no_masks)]
+     ('UMAP_scaled', 'passthrough', fset_raw)]
 )
 
 X_t = c_transformer.fit_transform(X)
