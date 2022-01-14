@@ -119,3 +119,22 @@ b_pvt = pd.pivot_table(b_grid_forest_results,
 sns.heatmap(b_pvt, annot=True)
 plt.show()
 plt.close()
+
+"""
+manual CV to get predictions out (will be emphasized in text)
+best param for GBC are (max_depth 5, LR 0.1)
+"""
+
+gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.1, max_depth=5)
+gkf = GroupKFold(n_splits=4)
+gbc_pipeline = Pipeline(
+    steps=[('preproc_PCA_UMAP', c_transformer),
+           ('GBC', boosted_forest)]
+)
+
+# splitting
+
+nuclei = data['file'].unique()
+np.random.shuffle(nuclei) # does it work in place?
+splits = np.array_split(nuclei, 5)
+
