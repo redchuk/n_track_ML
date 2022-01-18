@@ -1,17 +1,9 @@
 """
-This is to join pre-processing (PCA, UMAP (LDA?)) and gradient boosting classifier in a non-leaky way
+This is to join pre-processing (PCA, UMAP) and gradient boosting classifier in a non-leaky way
 
-I want to add PCA, UMAP (and may be LDA?) to the feature set, but retain original features; next, preprocessing is
+I want to add PCA and UMAP to the feature set, but retain original features; next, preprocessing is
 to be combined with classifier using sklearn pipeline, so that it does not leak in CV.
-FeatureUnion is, likely, way to go. Since I don't know how to retain automatically the original features,
-SimpleImputer can be a workaround (I think there is no np.nan values in this data).
 
-pipeline example
-https://scikit-learn.org/stable/modules/compose.html#feature-union
-
-Options for preprocessing:
-*- ColumnTransformer - can I reuse same column several times? Seems that I can
-- Can I use several Column transformers as a FeatureUnion?
 """
 
 import pandas as pd
@@ -84,12 +76,12 @@ UMAP_transformer = Pipeline(
 )
 c_transformer = ColumnTransformer(
     [('f_to_retain', SimpleImputer(missing_values=np.nan, strategy='mean'), fset_all),
-     # (hopefully) does nothing, placed here to keep original features in pipeline output
+     # (hopefully) does nothing, placed here to keep original features in pre-processing pipeline output
      ('PCA_scaled', PCA_transformer, fset_no_masks),
      ('UMAP_scaled', 'passthrough', fset_raw)]
 )
 
-X_t = c_transformer.fit_transform(X)
+# X_t = c_transformer.fit_transform(X)
 # seems it works, is there an easy way to get feature names?
 
 """
@@ -121,20 +113,35 @@ plt.show()
 plt.close()
 
 """
-manual CV to get predictions out (will be emphasized in text)
-best param for GBC are (max_depth 5, LR 0.1)
+manual CV to get predictions out (will be explained in text)
+best param for GBC are (max_depth 5, LR 0.1(should be default))
 """
 
 gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.1, max_depth=5)
-gkf = GroupKFold(n_splits=4)
 gbc_pipeline = Pipeline(
     steps=[('preproc_PCA_UMAP', c_transformer),
-           ('GBC', boosted_forest)]
+           ('GBC', gbc)]
 )
 
-# splitting
-
+# splitting (instead of gkf=4 above)
 nuclei = data['file'].unique()
-np.random.shuffle(nuclei) # does it work in place?
-splits = np.array_split(nuclei, 5)
+np.random.shuffle(nuclei)
+splits = np.array_split(nuclei, 4)
 
+scores = []
+for split in splits:
+    test_data = data[data['file'].isin(split)]
+    train_data = data[~data['file'].isin(split)]
+    X = train_data[fset_all]
+    y = train_data['t_serum_conc_percent']
+    y = (y / 10).astype('int')
+    X_test = test_data[fset_all]
+    y_test = test_data['t_serum_conc_percent']
+    y_test = (y_test / 10).astype('int')
+
+    gbc_pipeline.fit(X, y)
+    print(X.shape, y.shape, X_test.shape, y_test.shape)
+    print(gbc_pipeline.score(X_test, y_test))
+    scores.append(gbc_pipeline.score(X_test, y_test))
+print(scores)
+print(np.mean(scores))
