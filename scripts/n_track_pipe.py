@@ -9,7 +9,7 @@ to be combined with classifier using sklearn pipeline, so that it does not leak 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
-from sklearn.model_selection import GroupKFold, GridSearchCV
+from sklearn.model_selection import GroupKFold, GridSearchCV, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
@@ -129,6 +129,7 @@ np.random.shuffle(nuclei)
 splits = np.array_split(nuclei, 4)
 
 scores = []
+print('manual splits:')
 for split in splits:
     test_data = data[data['file'].isin(split)]
     train_data = data[~data['file'].isin(split)]
@@ -143,5 +144,25 @@ for split in splits:
     print(X.shape, y.shape, X_test.shape, y_test.shape)
     print(gbc_pipeline.score(X_test, y_test))
     scores.append(gbc_pipeline.score(X_test, y_test))
+print(scores)
+print(np.mean(scores))
+
+"""
+automated splits with fixed GBC hyperparameters
+"""
+
+X = data[fset_all]
+y = data['t_serum_conc_percent']  # .astype('str')
+y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
+
+gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.1, max_depth=5)
+gkf = GroupKFold(n_splits=4)
+gbc_pipeline = Pipeline(
+    steps=[('preproc_PCA_UMAP', c_transformer),
+           ('GBC', gbc)]
+)
+
+scores = cross_val_score(gbc_pipeline, X, y, cv=gkf, groups=data['file'])
+print('automated splits, same hyperparameters:')
 print(scores)
 print(np.mean(scores))
