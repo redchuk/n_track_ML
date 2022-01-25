@@ -9,7 +9,7 @@ to be combined with classifier using sklearn pipeline, so that it does not leak 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
-from sklearn.model_selection import GroupKFold, GridSearchCV, cross_val_score
+from sklearn.model_selection import GroupKFold, GridSearchCV, cross_val_score, cross_val_predict
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
@@ -61,7 +61,6 @@ for i in [scaled_all, scaled_no_masks, scaled_raw]:
     plt.close()
 """
 
-
 """
 adding PCA and UMAP as features
 """
@@ -71,8 +70,8 @@ PCA_transformer = Pipeline(
 )
 
 UMAP_transformer = Pipeline(
-    #steps=[('scaler', StandardScaler()), ('UMAP', UMAP(n_components=20))]
-    steps=[('scaler', 'passthrough'), ('UMAP', UMAP(n_components=4))] # no scaling
+    # steps=[('scaler', StandardScaler()), ('UMAP', UMAP(n_components=20))]
+    steps=[('scaler', 'passthrough'), ('UMAP', UMAP(n_components=4))]  # no scaling
 )
 c_transformer = ColumnTransformer(
     [('f_to_retain', SimpleImputer(missing_values=np.nan, strategy='mean'), fset_all),
@@ -166,3 +165,7 @@ scores = cross_val_score(gbc_pipeline, X, y, cv=gkf, groups=data['file'])
 print('automated splits, same hyperparameters:')
 print(scores)
 print(np.mean(scores))
+
+cv_pred = cross_val_predict(gbc_pipeline, X, y, cv=gkf, groups=data['file'])  # returns predictions from cv
+(y == cv_pred).sum() / len(y)  # accuracy for cv-derived predictions
+#  cross_val_predict is not an appropriate measure of generalisation error, see docs
