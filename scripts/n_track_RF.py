@@ -4,9 +4,10 @@ from scipy.stats import linregress
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, cross_val_predict
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import classification_report
 import seaborn as sns
 from matplotlib import pyplot as plt
 
@@ -181,13 +182,15 @@ for metric in metrics:
 '''
 # since 1-level decision tree cannot overfit, we can train and score without cross-validation?
 
-
+'''
 trees_noCV = []
 for feature in features:
     tree_noCV = DecisionTreeClassifier(random_state=0, max_depth=1)
     trees_noCV[feature] = tree_noCV.fit(X[feature].values.reshape(-1, 1), y).score(X[feature].values.reshape(-1, 1), y)
 
 trees_noCV = trees_noCV.transpose()
+
+'''
 
 ''' 
 Random forest
@@ -214,12 +217,12 @@ var = np.var([tree.feature_importances_ for tree in grid_search.best_estimator_.
 Gradient boosting trees
 '''
 
-boosted_forest = GradientBoostingClassifier(n_estimators=1000, random_state=0)
+# boosted_forest = GradientBoostingClassifier(n_estimators=1000, random_state=0)
 gkf = GroupKFold(n_splits=4)
 # print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
 
-b_param_grid = {'learning_rate': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10],
-                'max_depth': [1, 2, 3, 4, 5, 10, 20, 30, 40]}
+b_param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
+                'max_depth': [4, 5, 6, 7, 8, 9, 10, 20]}
 
 grid_b_forest = GradientBoostingClassifier(n_estimators=1000)
 b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf,
@@ -263,20 +266,15 @@ Plotting forests results
 ''' 
 Custom-made leave-one-group-out
 '''
-
+'''
 data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
 data_sterile.set_index(['file', 'particle'], drop=False, inplace=True)
 features = data_sterile.columns[7:]
-'''
-X = data_sterile[features]
-y = data_sterile['t_serum_conc_percent']  # .astype('str')
-y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
-'''
 boosted_forest = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.001, max_depth=4, random_state=62)
 gkf = GroupKFold(n_splits=153)
-'''
-loo = cross_val_score(boosted_forest, X, y, cv=gkf, groups=data_sterile['file'])
-np.mean(loo)'''
+
+# loo = cross_val_score(boosted_forest, X, y, cv=gkf, groups=data_sterile['file'])
+# np.mean(loo)
 # this is not weighted by number of samples, so I'll need manual LOO to predict
 
 for inx in data_sterile['file'].unique():
@@ -297,3 +295,24 @@ sum(comp)/302
 #  which is lower than accuracy estimated by (repeated) K-foldCV (k=4),
 #  discussed by others here
 #  https://stats.stackexchange.com/questions/61783/bias-and-variance-in-leave-one-out-vs-k-fold-cross-validation
+'''
+
+'''
+Trying SHAP with 'optimal' GBC. To explain, visualize, compare with baseline
+'''
+
+param_from_gs = [(10, 10), (0.0001, 10), (1, 6)]  # (LR, MD)
+predictions = []
+reports = []
+for pair in param_from_gs:
+    gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=pair[0], max_depth=pair[1])
+    gkf = GroupKFold(n_splits=4)
+    cv_pred = cross_val_predict(gbc, X, y, cv=gkf, groups=data_sterile['file'])
+    predictions.append(cv_pred)
+    report = classification_report(y, cv_pred)
+    reports.append(report)
+    print(f'learning_rate={pair[0]}, max_depth={pair[1]}')
+    print(report)
+
+
+
