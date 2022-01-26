@@ -3,7 +3,7 @@ import numpy as np
 import shap
 from scipy.stats import linregress
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import GroupKFold
+from sklearn.model_selection import GroupKFold, GroupShuffleSplit
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV, cross_val_predict
 from sklearn.ensemble import RandomForestClassifier
@@ -323,8 +323,10 @@ X = data_sterile[features]
 y = data_sterile['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 
+#gss = GroupShuffleSplit(n_splits=4)
 
 for strain, stest in gkf.split(X, y, data_sterile['file']):
+#for strain, stest in gss.split(X, y, data_sterile['file']):
     train_data = data_sterile.iloc[strain,:]
     test_data = data_sterile.iloc[stest,:]
     sX = train_data[features]
