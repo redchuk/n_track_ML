@@ -129,9 +129,12 @@ splits = np.array_split(nuclei, 4)
 
 scores = []
 print('manual splits:')
-for split in splits:
-    test_data = data[data['file'].isin(split)]
-    train_data = data[~data['file'].isin(split)]
+# for split in splits:
+for strain,stest in gkf.split(X,y,data['file']):
+    # test_data = data[data['file'].isin(split)]
+    # train_data = data[~data['file'].isin(split)]
+    train_data = data.iloc[strain,:]
+    test_data = data.iloc[stest,:]
     X = train_data[fset_all]
     y = train_data['t_serum_conc_percent']
     y = (y / 10).astype('int')
@@ -169,3 +172,7 @@ print(np.mean(scores))
 cv_pred = cross_val_predict(gbc_pipeline, X, y, cv=gkf, groups=data['file'])  # returns predictions from cv
 (y == cv_pred).sum() / len(y)  # accuracy for cv-derived predictions
 #  cross_val_predict is not an appropriate measure of generalisation error, see docs
+
+
+
+
