@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import shap
 from scipy.stats import linregress
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GroupKFold
@@ -298,10 +299,10 @@ sum(comp)/302
 '''
 
 '''
-Trying SHAP with 'optimal' GBC. To explain, visualize, compare with baseline
+classification_report
 '''
 
-param_from_gs = [(10, 10), (0.0001, 10), (1, 6)]  # (LR, MD)
+param_from_gs = [(10, 10), (0.0001, 10), (1, 6)]  # (learning_rate, max_depth)
 predictions = []
 reports = []
 for pair in param_from_gs:
@@ -313,6 +314,33 @@ for pair in param_from_gs:
     reports.append(report)
     print(f'learning_rate={pair[0]}, max_depth={pair[1]}')
     print(report)
+
+'''
+SHAP
+'''
+
+X = data_sterile[features]
+y = data_sterile['t_serum_conc_percent']  # .astype('str')
+y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
+
+
+for strain, stest in gkf.split(X, y, data_sterile['file']):
+    train_data = data_sterile.iloc[strain,:]
+    test_data = data_sterile.iloc[stest,:]
+    sX = train_data[features]
+    sy = train_data['t_serum_conc_percent']
+    sy = (sy / 10).astype('int')
+    sX_test = test_data[features]
+    sy_test = test_data['t_serum_conc_percent']
+    sy_test = (sy_test / 10).astype('int')
+
+    gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=10, max_depth=10)
+    gbc.fit(sX, sy)
+
+    explainer = shap.TreeExplainer(gbc)
+    shap_values = explainer.shap_values(sX_test)
+    shap.summary_plot(shap_values, sX_test, plot_size=(25,7))
+
 
 
 
