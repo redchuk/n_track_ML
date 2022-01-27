@@ -327,8 +327,11 @@ y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 l_rate = 1
 depth = 6
 
+pred_list = []
+pred_proba_list = []
 shap_vs_list = []
 sX_test_list = []
+sy_test_list = []
 
 for strain, stest in gkf.split(X, y, data_sterile['file']):
     train_data = data_sterile.iloc[strain,:]
@@ -340,23 +343,29 @@ for strain, stest in gkf.split(X, y, data_sterile['file']):
     sy_test = test_data['t_serum_conc_percent']
     sy_test = (sy_test / 10).astype('int')
 
-    #gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=l_rate, max_depth=depth)
-    gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=l_rate, max_depth=depth)  # fast
+    sX_test_list.append(sX_test)
+    sy_test_list.append(sy_test)
+
+    gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=l_rate, max_depth=depth)
     gbc.fit(sX, sy)
 
-    cv_pred = cross_val_predict(gbc, sX, sy)
-    cv_pred_proba = cross_val_predict(gbc, sX, sy, method='predict_proba')
+    pred = gbc.predict(sX_test)
+    pred_list.append(pred)
+    pred_proba = gbc.predict_proba(sX_test)
+    pred_proba_list.append(pred_proba)
 
     explainer = shap.TreeExplainer(gbc)
     shap_values = explainer.shap_values(sX_test)
     shap_vs_list.append(shap_values)
-    sX_test_list.append(sX_test)
 
-    #  insert report
-    #  add pred and pred_proba
+    #  todo: insert report, check if report acc corresponds to manually calculated, join arrays below
 
-all_splits_shap = np.concatenate(shap_vs_list)
 all_sX_test = pd.concat(sX_test_list)
+all_sy_test = pd.concat(sy_test_list)
+all_splits_shap = np.concatenate(shap_vs_list)
+all_pred = np.concatenate(pred_list)
+all_pred_proba = np.concatenate(pred_proba_list)
+
 shap.summary_plot(all_splits_shap, all_sX_test, plot_size=(25,7))
 
 
