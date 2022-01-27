@@ -367,7 +367,7 @@ all_pred = np.concatenate(pred_list)
 all_pred_proba = np.concatenate(pred_proba_list)
 
 shap.summary_plot(all_splits_shap, all_sX_test, plot_size=(25,7))
-
-
+shap.dependence_plot('f_area_micron', all_splits_shap, all_sX_test)
+# https://shap-lrjball.readthedocs.io/en/latest/generated/shap.dependence_plot.html
 
 
