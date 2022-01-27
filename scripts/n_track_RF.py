@@ -323,10 +323,14 @@ X = data_sterile[features]
 y = data_sterile['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 
-#gss = GroupShuffleSplit(n_splits=4)
+# param_from_gs = [(10, 10), (0.0001, 10), (1, 6)]  # (learning_rate, max_depth)
+l_rate = 1
+depth = 6
+
+shap_vs_list = []
+sX_test_list = []
 
 for strain, stest in gkf.split(X, y, data_sterile['file']):
-#for strain, stest in gss.split(X, y, data_sterile['file']):
     train_data = data_sterile.iloc[strain,:]
     test_data = data_sterile.iloc[stest,:]
     sX = train_data[features]
@@ -336,12 +340,24 @@ for strain, stest in gkf.split(X, y, data_sterile['file']):
     sy_test = test_data['t_serum_conc_percent']
     sy_test = (sy_test / 10).astype('int')
 
-    gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=10, max_depth=10)
+    #gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=l_rate, max_depth=depth)
+    gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=l_rate, max_depth=depth)  # fast
     gbc.fit(sX, sy)
+
+    cv_pred = cross_val_predict(gbc, sX, sy)
+    cv_pred_proba = cross_val_predict(gbc, sX, sy, method='predict_proba')
 
     explainer = shap.TreeExplainer(gbc)
     shap_values = explainer.shap_values(sX_test)
-    shap.summary_plot(shap_values, sX_test, plot_size=(25,7))
+    shap_vs_list.append(shap_values)
+    sX_test_list.append(sX_test)
+
+    #  insert report
+    #  add pred and pred_proba
+
+all_splits_shap = np.concatenate(shap_vs_list)
+all_sX_test = pd.concat(sX_test_list)
+shap.summary_plot(all_splits_shap, all_sX_test, plot_size=(25,7))
 
 
 
