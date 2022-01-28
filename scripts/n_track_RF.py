@@ -373,5 +373,6 @@ shap.dependence_plot('f_mean_diff_xy_micron', all_splits_shap, all_sX_test, inte
 # https://shap-lrjball.readthedocs.io/en/latest/generated/shap.dependence_plot.html
 
 #  todo: SHAP for networks and baseline
+#  todo: SHAP for subgroups! (true/false predicted, mask-features)
 #  todo: SHAP with groups of features and shap correlation plot
 
