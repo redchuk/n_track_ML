@@ -367,7 +367,11 @@ all_pred = np.concatenate(pred_list)
 all_pred_proba = np.concatenate(pred_proba_list)
 
 shap.summary_plot(all_splits_shap, all_sX_test, plot_size=(25,7))
-shap.dependence_plot('f_area_micron', all_splits_shap, all_sX_test)
+shap.dependence_plot('f_mean_diff_xy_micron', all_splits_shap, all_sX_test, interaction_index='f_most_central_mask')
+# x_jitter=0.3
+# https://towardsdatascience.com/you-are-underutilizing-shap-values-feature-groups-and-correlations-8df1b136e2c2
 # https://shap-lrjball.readthedocs.io/en/latest/generated/shap.dependence_plot.html
 
+#  todo: SHAP for networks and baseline
+#  todo: SHAP with groups of features and shap correlation plot
 
