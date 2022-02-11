@@ -3,7 +3,7 @@ import numpy as np
 import shap
 from scipy.stats import linregress
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import GroupKFold, GroupShuffleSplit
+from sklearn.model_selection import GroupKFold, GroupShuffleSplit, StratifiedGroupKFold
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV, cross_val_predict
 from sklearn.ensemble import RandomForestClassifier
@@ -219,11 +219,12 @@ Gradient boosting trees
 '''
 
 # boosted_forest = GradientBoostingClassifier(n_estimators=1000, random_state=0)
-gkf = GroupKFold(n_splits=4)
+#gkf = GroupKFold(n_splits=4)
+gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=42)
 # print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
 
 b_param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
-                'max_depth': [4, 5, 6, 7, 8, 9, 10, 20]}
+                'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30]}
 
 grid_b_forest = GradientBoostingClassifier(n_estimators=1000)
 b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf,
@@ -248,6 +249,12 @@ b_pvt = pd.pivot_table(b_grid_forest_results,
 sns.heatmap(b_pvt, annot=True)
 plt.show()
 plt.close()
+
+# fast baseline with the same cv:
+tree = DecisionTreeClassifier(max_depth=1)
+np.mean(cross_val_score(tree, X, y, cv=gkf, groups=data_sterile['file']))
+np.mean(cross_val_score(tree, X['f_slope_area_micron'].values.reshape(-1, 1), y, cv=gkf, groups=data_sterile['file']))
+
 
 '''
 rf_pvt = pd.pivot_table(grid_forest_results,
@@ -307,7 +314,8 @@ predictions = []
 reports = []
 for pair in param_from_gs:
     gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=pair[0], max_depth=pair[1])
-    gkf = GroupKFold(n_splits=4)
+    #gkf = GroupKFold(n_splits=4)
+    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=42)
     cv_pred = cross_val_predict(gbc, X, y, cv=gkf, groups=data_sterile['file'])
     predictions.append(cv_pred)
     report = classification_report(y, cv_pred)
@@ -366,7 +374,7 @@ all_splits_shap = np.concatenate(shap_vs_list)
 all_pred = np.concatenate(pred_list)
 all_pred_proba = np.concatenate(pred_proba_list)
 
-shap.summary_plot(all_splits_shap, all_sX_test, plot_size=(25,7))
+shap.summary_plot(all_splits_shap, all_sX_test, plot_size=(25,10))
 shap.dependence_plot('f_mean_diff_xy_micron', all_splits_shap, all_sX_test, interaction_index='f_most_central_mask')
 # x_jitter=0.3
 # https://towardsdatascience.com/you-are-underutilizing-shap-values-feature-groups-and-correlations-8df1b136e2c2
