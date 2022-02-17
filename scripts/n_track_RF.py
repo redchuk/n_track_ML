@@ -217,21 +217,38 @@ var = np.var([tree.feature_importances_ for tree in grid_search.best_estimator_.
 ''' 
 Gradient boosting trees
 '''
+metric = 'mean_test_accuracy'
+pivots = []
+grids = []
+iterations = 2
 
-# boosted_forest = GradientBoostingClassifier(n_estimators=1000, random_state=0)
-#gkf = GroupKFold(n_splits=4)
-gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=42)
-# print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
+for i in range(iterations):
+    #gkf = GroupKFold(n_splits=4)
+    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=42)
+    # print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
 
-b_param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
-                'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30]}
+    b_param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
+                    'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30]}
 
-grid_b_forest = GradientBoostingClassifier(n_estimators=1000)
-b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf,
-                             scoring=['accuracy', 'precision', 'recall', 'f1'],
-                             refit=False)
-b_grid_search.fit(X, y, groups=data_sterile['file'])
-b_grid_forest_results = pd.DataFrame(b_grid_search.cv_results_)
+    grid_b_forest = GradientBoostingClassifier(n_estimators=1000)
+    b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf,
+                                 scoring=['accuracy', 'precision', 'recall', 'f1'],
+                                 refit=False)
+    b_grid_search.fit(X, y, groups=data_sterile['file'])
+    #b_grid_forest_results = pd.DataFrame(b_grid_search.cv_results_)
+    grids.append(b_grid_search.cv_results_)
+
+    b_pvt = pd.pivot_table(pd.DataFrame(b_grid_search.cv_results_),
+                       values=metric,
+                       index='param_learning_rate',
+                       columns='param_max_depth')
+
+    pivots.append(b_pvt)
+
+mpvts = np.mean(pivots, axis=0)  # todo check this
+sns.heatmap(mpvts, annot=True)
+plt.show()
+plt.close()
 
 # forest_b_importances = b_grid_search.best_estimator_.feature_importances_
 
@@ -242,13 +259,7 @@ b_grid_forest_results = pd.DataFrame(b_grid_search.cv_results_)
 # y.value_counts() # to check if classes are balanced
 # b_grid_forest_results.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_forest_results.csv')
 
-b_pvt = pd.pivot_table(b_grid_forest_results,
-                       values='mean_test_accuracy',
-                       index='param_learning_rate',
-                       columns='param_max_depth')
-sns.heatmap(b_pvt, annot=True)
-plt.show()
-plt.close()
+
 
 # fast baseline with the same cv:
 tree = DecisionTreeClassifier(max_depth=1)
