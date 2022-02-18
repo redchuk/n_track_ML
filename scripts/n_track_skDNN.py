@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras import models
 from keras import layers
-from sklearn.model_selection import GroupKFold
+from sklearn.model_selection import GroupKFold, StratifiedGroupKFold
 from sklearn.model_selection import cross_val_score
 
 ''' 
@@ -55,6 +55,7 @@ data preprocessing
 '''
 
 X = data_raw[data_raw.columns[1:]]
+#X = data_raw[data_raw.columns[37:]] #  raw features only
 X_norm = X / X.max(axis=0)
 
 scaler = StandardScaler()
@@ -92,9 +93,9 @@ def create_model():
 ''' 
 use model with sklearn cross-val
 '''
-for k in range(5, 1005, 5):  # takes an eternity, needed to check for accuracy 'degradation' due to overfitting
+for k in range(5, 1505, 5):  # takes an eternity, needed to check for accuracy 'degradation' due to overfitting
     model = KerasClassifier(build_fn=create_model, epochs=k, verbose=0)
-    gkf = GroupKFold(n_splits=4)
+    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
     results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
     for i in range(10):  # repeated CV, since one iteration gives too unstable results
         scores = cross_val_score(model, X_norm, y, cv=gkf, groups=data_raw.reset_index()['file'])
@@ -107,8 +108,8 @@ for k in range(5, 1005, 5):  # takes an eternity, needed to check for accuracy '
 (one time version) use model with sklearn cross-val 
 '''
 
-model = KerasClassifier(build_fn=create_model, epochs=300, verbose=0)
-gkf = GroupKFold(n_splits=4)
+model = KerasClassifier(build_fn=create_model, epochs=1100, verbose=0)
+gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
 results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
 for i in range(10):  # repeated CV, since one iteration gives too unstable results
     scores = cross_val_score(model, X_norm, y, cv=gkf, groups=data_raw.reset_index()['file'])
