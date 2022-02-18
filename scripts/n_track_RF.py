@@ -11,6 +11,8 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import classification_report
 import seaborn as sns
 from matplotlib import pyplot as plt
+from datetime import datetime
+from random import randint
 
 ''' 
 read the data 
@@ -217,14 +219,20 @@ var = np.var([tree.feature_importances_ for tree in grid_search.best_estimator_.
 ''' 
 Gradient boosting trees
 '''
-metric = 'mean_test_accuracy'
+# todo check if different metrics work, not only acc
+metric = 'accuracy'  # 'accuracy', 'precision', 'recall', 'f1' see suffixes
 pivots = []
 grids = []
+baselines = []
+
 iterations = 2
 
+
 for i in range(iterations):
-    #gkf = GroupKFold(n_splits=4)
-    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=42)
+    print('iter ' + str(i) + ' start, time:', datetime.now().strftime("%H:%M:%S"))
+    # gkf = GroupKFold(n_splits=4)
+    rand_state = randint(1, 100)  # to fix StratifiedGroupKFold for this iteration
+    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=rand_state)
     # print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
 
     b_param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
@@ -232,23 +240,43 @@ for i in range(iterations):
 
     grid_b_forest = GradientBoostingClassifier(n_estimators=1000)
     b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf,
-                                 scoring=['accuracy', 'precision', 'recall', 'f1'],
+                                 scoring=metric,
                                  refit=False)
     b_grid_search.fit(X, y, groups=data_sterile['file'])
-    #b_grid_forest_results = pd.DataFrame(b_grid_search.cv_results_)
+    # b_grid_forest_results = pd.DataFrame(b_grid_search.cv_results_)
     grids.append(b_grid_search.cv_results_)
 
     b_pvt = pd.pivot_table(pd.DataFrame(b_grid_search.cv_results_),
-                       values=metric,
-                       index='param_learning_rate',
-                       columns='param_max_depth')
+                           values='mean_test_score',
+                           index='param_learning_rate',
+                           columns='param_max_depth')
 
     pivots.append(b_pvt)
 
-mpvts = np.mean(pivots, axis=0)  # todo check this
+    # fast baseline with the same cv:
+    tree = DecisionTreeClassifier(max_depth=1)
+    # np.mean(cross_val_score(tree, X, y, cv=gkf, groups=data_sterile['file'])) # tree can't choose the feature, why?
+    baselines.append(np.mean(cross_val_score(tree, X['f_slope_area_micron'].values.reshape(-1, 1),
+                            y, cv=gkf, groups=data_sterile['file'])))
+
+
+mpvts = pd.concat(pivots).mean(level=0)
+pvt_sem = pd.concat(pivots).sem(level=0)
 sns.heatmap(mpvts, annot=True)
 plt.show()
 plt.close()
+
+mpvts.plot(kind='bar',
+           yerr=pvt_sem / 100,
+           ylim=(0.425, 0.6),
+           figsize=(14, 9),
+           colormap='magma',
+           width=1).legend(loc='best')
+
+plt.show()
+plt.close()
+
+print('baseline for area slope: ' + str(np.mean(baselines)))
 
 # forest_b_importances = b_grid_search.best_estimator_.feature_importances_
 
@@ -259,12 +287,6 @@ plt.close()
 # y.value_counts() # to check if classes are balanced
 # b_grid_forest_results.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_forest_results.csv')
 
-
-
-# fast baseline with the same cv:
-tree = DecisionTreeClassifier(max_depth=1)
-np.mean(cross_val_score(tree, X, y, cv=gkf, groups=data_sterile['file']))
-np.mean(cross_val_score(tree, X['f_slope_area_micron'].values.reshape(-1, 1), y, cv=gkf, groups=data_sterile['file']))
 
 
 '''
@@ -325,7 +347,7 @@ predictions = []
 reports = []
 for pair in param_from_gs:
     gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=pair[0], max_depth=pair[1])
-    #gkf = GroupKFold(n_splits=4)
+    # gkf = GroupKFold(n_splits=4)
     gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=42)
     cv_pred = cross_val_predict(gbc, X, y, cv=gkf, groups=data_sterile['file'])
     predictions.append(cv_pred)
@@ -341,7 +363,7 @@ SHAP
 X = data_sterile[features]
 y = data_sterile['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
-
+gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
 # param_from_gs = [(10, 10), (0.0001, 10), (1, 6)]  # (learning_rate, max_depth)
 l_rate = 1
 depth = 6
@@ -353,8 +375,8 @@ sX_test_list = []
 sy_test_list = []
 
 for strain, stest in gkf.split(X, y, data_sterile['file']):
-    train_data = data_sterile.iloc[strain,:]
-    test_data = data_sterile.iloc[stest,:]
+    train_data = data_sterile.iloc[strain, :]
+    test_data = data_sterile.iloc[stest, :]
     sX = train_data[features]
     sy = train_data['t_serum_conc_percent']
     sy = (sy / 10).astype('int')
@@ -385,7 +407,7 @@ all_splits_shap = np.concatenate(shap_vs_list)
 all_pred = np.concatenate(pred_list)
 all_pred_proba = np.concatenate(pred_proba_list)
 
-shap.summary_plot(all_splits_shap, all_sX_test, plot_size=(25,10))
+shap.summary_plot(all_splits_shap, all_sX_test, plot_size=(25, 10))
 shap.dependence_plot('f_mean_diff_xy_micron', all_splits_shap, all_sX_test, interaction_index='f_most_central_mask')
 # x_jitter=0.3
 # https://towardsdatascience.com/you-are-underutilizing-shap-values-feature-groups-and-correlations-8df1b136e2c2
@@ -394,4 +416,3 @@ shap.dependence_plot('f_mean_diff_xy_micron', all_splits_shap, all_sX_test, inte
 #  todo: SHAP for networks and baseline
 #  todo: SHAP for subgroups! (true/false predicted, mask-features)
 #  todo: SHAP with groups of features and shap correlation plot
-
