@@ -128,26 +128,6 @@ data_sterile.reset_index(inplace=True)
 corr_features = data_sterile.corr()
 # cleaning up
 
-# data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
-# features = data_sterile.columns[7:]
-# to get data with principal components
-
-''' 
-Train / test split
-!!! train/test split is deprecated, cross-val with whole dataset is used from now on
-
-tst = int((data_sterile['file'].unique().shape[0]) / 5)
-# nuclei number to choose for testing
-
-test_choice = np.random.RandomState(4242).choice(data_sterile['file'].unique(), tst, replace=False)
-test_data = data_sterile[data_sterile['file'].isin(test_choice)]
-train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
-train_data = train_data.dropna()
-
-X = train_data[features]
-y = train_data['t_serum_conc_percent'].astype('str')
-'''
-
 features = [
     'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_var_diff_xy_micron',
     'f_area_micron', 'f_perimeter_au_norm', 'f_min_dist_micron',
@@ -163,77 +143,24 @@ X = data_sterile[features]
 y = data_sterile['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 
-''' 
-Baseline performance estimation
-
-
-tree = DecisionTreeClassifier(random_state=0, max_depth=1)
-gkf = GroupKFold(n_splits=4)
-
-metrics = ['accuracy', 'precision', 'recall', 'f1']
-baseline_scores = pd.DataFrame()
-for metric in metrics:
-    trees = pd.DataFrame()
-    for feature in features:
-        trees[feature] = cross_val_score(tree, X[feature].values.reshape(-1, 1), y,  # worked, now returns index error
-                                         cv=gkf, groups=data_sterile['file'],
-                                         scoring=metric
-                                         )
-
-    trees = trees.transpose()
-    baseline_scores[metric] = trees.mean(axis=1)
-'''
-# since 1-level decision tree cannot overfit, we can train and score without cross-validation?
-
-'''
-trees_noCV = []
-for feature in features:
-    tree_noCV = DecisionTreeClassifier(random_state=0, max_depth=1)
-    trees_noCV[feature] = tree_noCV.fit(X[feature].values.reshape(-1, 1), y).score(X[feature].values.reshape(-1, 1), y)
-
-trees_noCV = trees_noCV.transpose()
-
-'''
-
-''' 
-Random forest
-'''
-
-'''
-forest = RandomForestClassifier(n_estimators=1000, max_features=2, random_state=42)
-gkf = GroupKFold(n_splits=3)
-print("Cross-validation scores:\n{}".format(cross_val_score(forest, X, y, cv=gkf, groups=train_data['file'])))
-
-param_grid = {'max_features': [1, 2, 3, 5, 10, 15, "auto"],
-              'max_depth': [1, 2, 3, 5, 10, None]}
-
-grid_forest = RandomForestClassifier(n_estimators=1000)
-grid_search = GridSearchCV(grid_forest, param_grid, cv=gkf)
-grid_search.fit(X, y, groups=train_data['file'])
-grid_forest_results = pd.DataFrame(grid_search.cv_results_)
-forest_importances = grid_search.best_estimator_.feature_importances_
-std = np.std([tree.feature_importances_ for tree in grid_search.best_estimator_.estimators_], axis=0)
-var = np.var([tree.feature_importances_ for tree in grid_search.best_estimator_.estimators_], axis=0)
-'''
 
 ''' 
 Gradient boosting trees
 '''
+
 # todo check if different metrics work, not only acc
 metric = 'accuracy'  # 'accuracy', 'precision', 'recall', 'f1' see suffixes
 pivots = []
 grids = []
 baselines = []
 
-iterations = 2
+iterations = 10
 
 
 for i in range(iterations):
     print('iter ' + str(i) + ' start, time:', datetime.now().strftime("%H:%M:%S"))
-    # gkf = GroupKFold(n_splits=4)
     rand_state = randint(1, 100)  # to fix StratifiedGroupKFold for this iteration
     gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=rand_state)
-    # print("Cross-validation scores:\n{}".format(cross_val_score(boosted_forest, X, y, cv=gkf, groups=train_data['file'])))
 
     b_param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
                     'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30]}
@@ -243,7 +170,6 @@ for i in range(iterations):
                                  scoring=metric,
                                  refit=False)
     b_grid_search.fit(X, y, groups=data_sterile['file'])
-    # b_grid_forest_results = pd.DataFrame(b_grid_search.cv_results_)
     grids.append(b_grid_search.cv_results_)
 
     b_pvt = pd.pivot_table(pd.DataFrame(b_grid_search.cv_results_),
@@ -261,7 +187,7 @@ for i in range(iterations):
 
 
 mpvts = pd.concat(pivots).mean(level=0)
-pvt_sem = pd.concat(pivots).sem(level=0)
+pvt_sem = pd.concat(pivots).sem(level=0)  # standard error of mean, element-wise
 sns.heatmap(mpvts, annot=True)
 plt.show()
 plt.close()
@@ -278,65 +204,6 @@ plt.close()
 
 print('baseline for area slope: ' + str(np.mean(baselines)))
 
-# forest_b_importances = b_grid_search.best_estimator_.feature_importances_
-
-# forests_comp = pd.DataFrame({'RF': forest_importances, 'GBC': forest_b_importances}, index=X.columns)
-# forests_comp.plot(kind='bar')
-# compare importances for forest types
-
-# y.value_counts() # to check if classes are balanced
-# b_grid_forest_results.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_forest_results.csv')
-
-
-
-'''
-rf_pvt = pd.pivot_table(grid_forest_results,
-                        values='mean_test_score',
-                        index='param_max_features',
-                        columns='param_max_depth')
-'''
-
-''' 
-Plotting forests results
-'''
-
-# data_to_predict = data_sterile[features]
-# data_sterile['predicted_boosted'] = b_grid_search.best_estimator_.predict(data_sterile[features]).astype(float)
-# data_sterile.to_csv('C:/Users/redchuk/python/temp/temp_n_track_RF/boosted_predict66.csv')
-
-''' 
-Custom-made leave-one-group-out
-'''
-'''
-data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
-data_sterile.set_index(['file', 'particle'], drop=False, inplace=True)
-features = data_sterile.columns[7:]
-boosted_forest = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.001, max_depth=4, random_state=62)
-gkf = GroupKFold(n_splits=153)
-
-# loo = cross_val_score(boosted_forest, X, y, cv=gkf, groups=data_sterile['file'])
-# np.mean(loo)
-# this is not weighted by number of samples, so I'll need manual LOO to predict
-
-for inx in data_sterile['file'].unique():
-    train_data = data_sterile[~data_sterile['file'].isin([inx])]
-    test_data = data_sterile[data_sterile['file'].isin([inx])]
-    X = train_data[features]
-    y = train_data['t_serum_conc_percent']  # .astype('str')
-    y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
-    boosted_forest.fit(X, y)
-    for ii in test_data.index:
-        predicted = boosted_forest.predict(test_data.loc[ii, features].values.reshape(1, -1))[0]
-        data_sterile.loc[ii, '5c1e1b74_gbc_predicted'] = predicted
-        print(predicted)
-
-comp = ((data_sterile['t_serum_conc_percent']/ 10).astype('int')==data_sterile['5c1e1b74_gbc_predicted'])
-sum(comp)/302
-#  this gives accuracy 0.5529801324503312 for LOOCV,
-#  which is lower than accuracy estimated by (repeated) K-foldCV (k=4),
-#  discussed by others here
-#  https://stats.stackexchange.com/questions/61783/bias-and-variance-in-leave-one-out-vs-k-fold-cross-validation
-'''
 
 '''
 classification_report
@@ -355,6 +222,7 @@ for pair in param_from_gs:
     reports.append(report)
     print(f'learning_rate={pair[0]}, max_depth={pair[1]}')
     print(report)
+
 
 '''
 SHAP
