@@ -8,11 +8,12 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV, cross_val_predict
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, make_scorer, f1_score, precision_score, recall_score
 import seaborn as sns
 from matplotlib import pyplot as plt
 from datetime import datetime
 from random import randint
+
 
 ''' 
 read the data 
@@ -148,8 +149,8 @@ y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 Gradient boosting trees
 '''
 
-# todo check if different metrics work, not only acc
-metric = 'accuracy'  # 'accuracy', 'precision', 'recall', 'f1' see suffixes
+#metric = 'accuracy'  # 'accuracy', 'precision', 'recall', 'f1' see suffixes
+metric = make_scorer(precision_score, pos_label=0)
 pivots = []
 grids = []
 baselines = []
@@ -159,7 +160,7 @@ iterations = 10
 
 for i in range(iterations):
     print('iter ' + str(i) + ' start, time:', datetime.now().strftime("%H:%M:%S"))
-    rand_state = randint(1, 100)  # to fix StratifiedGroupKFold for this iteration
+    rand_state = randint(1, 100)  # not sure that this is needed
     gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=rand_state)
 
     b_param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
@@ -181,28 +182,33 @@ for i in range(iterations):
 
     # fast baseline with the same cv:
     tree = DecisionTreeClassifier(max_depth=1)
-    # np.mean(cross_val_score(tree, X, y, cv=gkf, groups=data_sterile['file'])) # tree can't choose the feature, why?
-    baselines.append(np.mean(cross_val_score(tree, X['f_slope_area_micron'].values.reshape(-1, 1),
-                            y, cv=gkf, groups=data_sterile['file'])))
+    baselines.append(np.mean(cross_val_score(tree, X, y, cv=gkf, groups=data_sterile['file'], scoring=metric)))
+    # tree can't choose the feature, why?
+
+    #baselines.append(np.mean(cross_val_score(tree, X['f_slope_area_micron'].values.reshape(-1, 1),
+    #                        y, cv=gkf, groups=data_sterile['file'])))
 
 
 mpvts = pd.concat(pivots).mean(level=0)
 pvt_sem = pd.concat(pivots).sem(level=0)  # standard error of mean, element-wise
 sns.heatmap(mpvts, annot=True)
+plt.title(str(metric)+' , '+str(iterations)+' cv reps')
 plt.show()
 plt.close()
 
 mpvts.plot(kind='bar',
            yerr=pvt_sem / 100,
-           ylim=(0.425, 0.6),
+           ylim=(0.425, 0.75),
            figsize=(14, 9),
            colormap='magma',
            width=1).legend(loc='best')
 
+plt.title(str(metric)+' , '+str(iterations)+' cv reps')
 plt.show()
 plt.close()
 
-print('baseline for area slope: ' + str(np.mean(baselines)))
+print(metric)
+print('baseline: ' + str(np.mean(baselines)))
 
 
 '''
