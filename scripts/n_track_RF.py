@@ -149,13 +149,14 @@ y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 Gradient boosting trees
 '''
 
-#metric = 'accuracy'  # 'accuracy', 'precision', 'recall', 'f1' see suffixes
-metric = make_scorer(precision_score, pos_label=0)
+metric = 'accuracy'  # 'accuracy', 'precision', 'recall', 'f1' see suffixes
+#metric = make_scorer(recall_score, pos_label=0)
 pivots = []
 grids = []
 baselines = []
+baselines_free = []
 
-iterations = 10
+iterations = 50
 
 
 for i in range(iterations):
@@ -182,11 +183,11 @@ for i in range(iterations):
 
     # fast baseline with the same cv:
     tree = DecisionTreeClassifier(max_depth=1)
-    baselines.append(np.mean(cross_val_score(tree, X, y, cv=gkf, groups=data_sterile['file'], scoring=metric)))
+    baselines_free.append(np.mean(cross_val_score(tree, X, y, cv=gkf, groups=data_sterile['file'], scoring=metric)))
     # tree can't choose the feature, why?
 
-    #baselines.append(np.mean(cross_val_score(tree, X['f_slope_area_micron'].values.reshape(-1, 1),
-    #                        y, cv=gkf, groups=data_sterile['file'])))
+    baselines.append(np.mean(cross_val_score(tree, X['f_slope_area_micron'].values.reshape(-1, 1),
+                            y, cv=gkf, groups=data_sterile['file'], scoring=metric)))
 
 
 mpvts = pd.concat(pivots).mean(level=0)
@@ -198,7 +199,7 @@ plt.close()
 
 mpvts.plot(kind='bar',
            yerr=pvt_sem / 100,
-           ylim=(0.425, 0.75),
+           ylim=(0.4, 0.65),
            figsize=(14, 9),
            colormap='magma',
            width=1).legend(loc='best')
@@ -208,8 +209,8 @@ plt.show()
 plt.close()
 
 print(metric)
-print('baseline: ' + str(np.mean(baselines)))
-
+print('baseline (area slope): ' + str(np.mean(baselines)))
+print('baseline (free feature choice): ' + str(np.mean(baselines_free)))
 
 '''
 classification_report
@@ -240,7 +241,7 @@ y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
 # param_from_gs = [(10, 10), (0.0001, 10), (1, 6)]  # (learning_rate, max_depth)
 l_rate = 1
-depth = 6
+depth = 7
 
 pred_list = []
 pred_proba_list = []
@@ -273,7 +274,7 @@ for strain, stest in gkf.split(X, y, data_sterile['file']):
     shap_values = explainer.shap_values(sX_test)
     shap_vs_list.append(shap_values)
 
-    #  todo: insert report, check if report acc corresponds to manually calculated, join arrays below
+    shap.summary_plot(shap_values, sX_test, sort=False, color_bar=False, plot_size=(10,10))
 
 all_sX_test = pd.concat(sX_test_list)
 all_sy_test = pd.concat(sy_test_list)
@@ -281,8 +282,13 @@ all_splits_shap = np.concatenate(shap_vs_list)
 all_pred = np.concatenate(pred_list)
 all_pred_proba = np.concatenate(pred_proba_list)
 
-shap.summary_plot(all_splits_shap, all_sX_test, plot_size=(25, 10))
-shap.dependence_plot('f_mean_diff_xy_micron', all_splits_shap, all_sX_test, interaction_index='f_most_central_mask')
+plt.title('aggregated')
+shap.summary_plot(all_splits_shap, all_sX_test, sort=False, color_bar=False, plot_size=(10,10))
+
+
+
+
+# shap.dependence_plot('f_mean_diff_xy_micron', all_splits_shap, all_sX_test, interaction_index='f_most_central_mask')
 # x_jitter=0.3
 # https://towardsdatascience.com/you-are-underutilizing-shap-values-feature-groups-and-correlations-8df1b136e2c2
 # https://shap-lrjball.readthedocs.io/en/latest/generated/shap.dependence_plot.html
