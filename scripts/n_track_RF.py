@@ -285,7 +285,28 @@ all_pred_proba = np.concatenate(pred_proba_list)
 plt.title('aggregated')
 shap.summary_plot(all_splits_shap, all_sX_test, sort=False, color_bar=False, plot_size=(10,10))
 
+df_all_splits_shap = pd.DataFrame(all_splits_shap, columns=all_sX_test.columns).add_prefix('shap_')
 
+# correlation for features
+plt.figure(figsize = (8,7))
+ax = sns.heatmap(all_sX_test.corr())
+ax.figure.tight_layout()
+plt.show()
+plt.close()
+
+# correlation for shap values
+plt.figure(figsize = (8,7))
+ax = sns.heatmap(df_all_splits_shap.corr())
+ax.figure.tight_layout()
+plt.show()
+plt.close()
+
+# correlation for shap values (absolute)
+plt.figure(figsize = (8,7))
+ax = sns.heatmap(df_all_splits_shap.corr().abs())
+ax.figure.tight_layout()
+plt.show()
+plt.close()
 
 
 # shap.dependence_plot('f_mean_diff_xy_micron', all_splits_shap, all_sX_test, interaction_index='f_most_central_mask')
