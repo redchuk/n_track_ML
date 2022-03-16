@@ -248,6 +248,7 @@ pred_proba_list = []
 shap_vs_list = []
 sX_test_list = []
 sy_test_list = []
+s_id_list = []
 
 for strain, stest in gkf.split(X, y, data_sterile['file']):
     train_data = data_sterile.iloc[strain, :]
@@ -261,6 +262,7 @@ for strain, stest in gkf.split(X, y, data_sterile['file']):
 
     sX_test_list.append(sX_test)
     sy_test_list.append(sy_test)
+    s_id_list.append(test_data[['file', 'particle']])
 
     gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=l_rate, max_depth=depth)
     gbc.fit(sX, sy)
@@ -274,18 +276,32 @@ for strain, stest in gkf.split(X, y, data_sterile['file']):
     shap_values = explainer.shap_values(sX_test)
     shap_vs_list.append(shap_values)
 
-    shap.summary_plot(shap_values, sX_test, sort=False, color_bar=False, plot_size=(10,10))
+    #shap.summary_plot(shap_values, sX_test, sort=False, color_bar=False, plot_size=(10,10))
 
 all_sX_test = pd.concat(sX_test_list)
 all_sy_test = pd.concat(sy_test_list)
 all_splits_shap = np.concatenate(shap_vs_list)
 all_pred = np.concatenate(pred_list)
 all_pred_proba = np.concatenate(pred_proba_list)
+all_s_id = pd.concat(s_id_list)
 
 plt.title('aggregated')
-shap.summary_plot(all_splits_shap, all_sX_test, sort=False, color_bar=False, plot_size=(10,10))
+shap.summary_plot(all_splits_shap, all_sX_test, sort=False, color_bar=False, plot_size=(10, 10))
 
 df_all_splits_shap = pd.DataFrame(all_splits_shap, columns=all_sX_test.columns).add_prefix('shap_')
+
+# assembly: all_sX_test (df), all_sy_test (series), df_all_splits_shap (df),
+# all_pred (array), all_pred_proba (array), all_s_id (df)
+
+list_to_concat = [all_sX_test,
+                  all_sy_test,
+                  df_all_splits_shap,
+                  pd.DataFrame(all_pred, columns=['predicted']),
+                  pd.DataFrame(all_pred_proba).add_prefix('proba_'),
+                  all_s_id]
+
+df_all = pd.concat(list_to_concat, axis=1)
+
 
 # correlation for features
 plt.figure(figsize = (8,7))
