@@ -14,7 +14,6 @@ from matplotlib import pyplot as plt
 from datetime import datetime
 from random import randint
 
-
 ''' 
 read the data 
 '''
@@ -144,20 +143,18 @@ X = data_sterile[features]
 y = data_sterile['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 
-
 ''' 
 Gradient boosting trees
 '''
 
 metric = 'accuracy'  # 'accuracy', 'precision', 'recall', 'f1' see suffixes
-#metric = make_scorer(recall_score, pos_label=0)
+# metric = make_scorer(recall_score, pos_label=0)
 pivots = []
 grids = []
 baselines = []
 baselines_free = []
 
-iterations = 50
-
+iterations = 1
 
 for i in range(iterations):
     print('iter ' + str(i) + ' start, time:', datetime.now().strftime("%H:%M:%S"))
@@ -187,13 +184,12 @@ for i in range(iterations):
     # tree can't choose the feature, why?
 
     baselines.append(np.mean(cross_val_score(tree, X['f_slope_area_micron'].values.reshape(-1, 1),
-                            y, cv=gkf, groups=data_sterile['file'], scoring=metric)))
-
+                                             y, cv=gkf, groups=data_sterile['file'], scoring=metric)))
 
 mpvts = pd.concat(pivots).mean(level=0)
 pvt_sem = pd.concat(pivots).sem(level=0)  # standard error of mean, element-wise
 sns.heatmap(mpvts, annot=True)
-plt.title(str(metric)+' , '+str(iterations)+' cv reps')
+plt.title(str(metric) + ' , ' + str(iterations) + ' cv reps')
 plt.show()
 plt.close()
 
@@ -204,7 +200,7 @@ mpvts.plot(kind='bar',
            colormap='magma',
            width=1).legend(loc='best')
 
-plt.title(str(metric)+' , '+str(iterations)+' cv reps')
+plt.title(str(metric) + ' , ' + str(iterations) + ' cv reps')
 plt.show()
 plt.close()
 
@@ -213,23 +209,16 @@ print('baseline (area slope): ' + str(np.mean(baselines)))
 print('baseline (free feature choice): ' + str(np.mean(baselines_free)))
 
 '''
-classification_report
+check for acc with hyperparameters selected from grid
 '''
-
-param_from_gs = [(10, 10), (0.0001, 10), (1, 6)]  # (learning_rate, max_depth)
-predictions = []
-reports = []
-for pair in param_from_gs:
-    gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=pair[0], max_depth=pair[1])
+fixed_hyper_acc = []
+for i in range(10):
+    gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=1, max_depth=7)
     # gkf = GroupKFold(n_splits=4)
-    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=42)
-    cv_pred = cross_val_predict(gbc, X, y, cv=gkf, groups=data_sterile['file'])
-    predictions.append(cv_pred)
-    report = classification_report(y, cv_pred)
-    reports.append(report)
-    print(f'learning_rate={pair[0]}, max_depth={pair[1]}')
-    print(report)
-
+    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=None)
+    score = cross_val_score(gbc, X, y, groups=data_sterile['file'], cv=gkf)
+    fixed_hyper_acc.append(np.mean(score))
+print(np.mean(fixed_hyper_acc))
 
 '''
 SHAP
@@ -239,7 +228,6 @@ X = data_sterile[features]
 y = data_sterile['t_serum_conc_percent']  # .astype('str')
 y = (y / 10).astype('int')  # '10% serum' = 1, '0.3% serum' = 0
 gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
-# param_from_gs = [(10, 10), (0.0001, 10), (1, 6)]  # (learning_rate, max_depth)
 l_rate = 1
 depth = 7
 
@@ -276,7 +264,7 @@ for strain, stest in gkf.split(X, y, data_sterile['file']):
     shap_values = explainer.shap_values(sX_test)
     shap_vs_list.append(shap_values)
 
-    #shap.summary_plot(shap_values, sX_test, sort=False, color_bar=False, plot_size=(10,10))
+    # shap.summary_plot(shap_values, sX_test, sort=False, color_bar=False, plot_size=(10,10))
 
 all_sX_test = pd.concat(sX_test_list)
 all_sy_test = pd.concat(sy_test_list)
@@ -290,9 +278,6 @@ shap.summary_plot(all_splits_shap, all_sX_test, sort=False, color_bar=False, plo
 
 df_all_splits_shap = pd.DataFrame(all_splits_shap, columns=all_sX_test.columns).add_prefix('shap_')
 
-# assembly: all_sX_test (df), all_sy_test (series), df_all_splits_shap (df),
-# all_pred (array), all_pred_proba (array), all_s_id (df)
-
 list_to_concat = [all_sX_test,
                   all_sy_test,
                   df_all_splits_shap,
@@ -301,35 +286,32 @@ list_to_concat = [all_sX_test,
                   all_s_id]
 
 df_all = pd.concat(list_to_concat, axis=1)
-
+df_all['correct'] = (df_all['t_serum_conc_percent'] == df_all['predicted'])
+print((np.sum(df_all['correct'])) / (len(df_all)))
+# todo: why accuracy is lower here?
 
 # correlation for features
-plt.figure(figsize = (8,7))
+plt.figure(figsize=(8, 7))
 ax = sns.heatmap(all_sX_test.corr())
 ax.figure.tight_layout()
 plt.show()
 plt.close()
 
 # correlation for shap values
-plt.figure(figsize = (8,7))
+plt.figure(figsize=(8, 7))
 ax = sns.heatmap(df_all_splits_shap.corr())
 ax.figure.tight_layout()
 plt.show()
 plt.close()
 
 # correlation for shap values (absolute)
-plt.figure(figsize = (8,7))
+plt.figure(figsize=(8, 7))
 ax = sns.heatmap(df_all_splits_shap.corr().abs())
 ax.figure.tight_layout()
 plt.show()
 plt.close()
 
-
 # shap.dependence_plot('f_mean_diff_xy_micron', all_splits_shap, all_sX_test, interaction_index='f_most_central_mask')
 # x_jitter=0.3
 # https://towardsdatascience.com/you-are-underutilizing-shap-values-feature-groups-and-correlations-8df1b136e2c2
 # https://shap-lrjball.readthedocs.io/en/latest/generated/shap.dependence_plot.html
-
-#  todo: SHAP for networks and baseline
-#  todo: SHAP for subgroups! (true/false predicted, mask-features)
-#  todo: SHAP with groups of features and shap correlation plot
