@@ -19,7 +19,7 @@ from keras.layers import Dropout
 read the data 
 '''
 
-data = pd.read_csv('scripts/a286935_data_chromatin_live.csv')
+data = pd.read_csv('data/a286935_data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
 data = data[~data["comment"].isin(["H2B"])]
 data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]

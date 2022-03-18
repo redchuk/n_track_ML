@@ -13,7 +13,7 @@ import seaborn as sns
 read and scale the data 
 '''
 
-data = pd.read_csv('scripts/b212a935_Chr1_data_sterile.csv')
+data = pd.read_csv('data/b212a935_Chr1_data_sterile.csv')
 
 fset1 = [
     'f_mean_diff_xy_micron', 'f_max_diff_xy_micron', 'f_var_diff_xy_micron',

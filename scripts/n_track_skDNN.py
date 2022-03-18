@@ -16,7 +16,7 @@ from sklearn.model_selection import cross_val_score
 read the data 
 
 '''
-data = pd.read_csv('scripts/a286935_data_chromatin_live.csv')
+data = pd.read_csv('data/a286935_data_chromatin_live.csv')
 data = data[~data["comment"].isin(["stress_control"])]
 data = data[~data["comment"].isin(["H2B"])]
 data = data[data["guide"].str.contains('1398') | data["guide"].str.contains('1514')]
@@ -37,7 +37,7 @@ data = data.unstack()  # reshape
 data.drop(('diff_xy_micron', 0), axis=1, inplace=True)  # drop first delta 'diff_xy_micron', which is NaN
 data.columns = data.columns.to_flat_index()  # needed for concat
 
-data_sterile = pd.read_csv('scripts/data_sterile_PCA_92ba95d.csv')
+data_sterile = pd.read_csv('data/data_sterile_PCA_92ba95d.csv')
 data_sterile.set_index(['file', 'particle'], inplace=True)
 features = data_sterile.columns[4:]
 data_sterile = data_sterile[features]

@@ -6,7 +6,7 @@ from numpy import mean, median
 import math
 from scipy import stats
 
-data_to_plot = pd.read_csv('scripts/data_sterile_f67592f.csv')
+data_to_plot = pd.read_csv('data/data_sterile_f67592f.csv')
 # data_to_plot = data_to_plot[data_to_plot['f_outliers2SD_diff_xy'] > 1] # outliers only
 
 """
@@ -176,7 +176,7 @@ Morphology plotting
 # feature = 'f_perimeter_au_norm'
 feature = 'circularity'
 
-morph_plot = pd.read_csv('scripts/data_sterile_f67592f.csv')
+morph_plot = pd.read_csv('data/data_sterile_f67592f.csv')
 morph_plot = morph_plot.groupby(['file']).agg({'f_area_micron': 'first',
                                                'f_perimeter_au_norm': 'first',
                                                't_time': 'first',
