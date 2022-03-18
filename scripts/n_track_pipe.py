@@ -19,7 +19,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from umap import UMAP
 
-data = pd.read_csv('scripts/b212a935_Chr1_data_sterile.csv')
+data = pd.read_csv('data/b212a935_Chr1_data_sterile.csv')
 
 fset_all = data.columns[6:]
 
