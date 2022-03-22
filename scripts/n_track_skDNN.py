@@ -11,6 +11,9 @@ from keras import models
 from keras import layers
 from sklearn.model_selection import GroupKFold, StratifiedGroupKFold
 from sklearn.model_selection import cross_val_score
+from sklearn.pipeline import Pipeline
+from datetime import datetime
+
 
 ''' 
 read the data 
@@ -54,9 +57,9 @@ data_raw = data_sterile.join(data)
 data preprocessing 
 '''
 
-#X = data_raw[data_raw.columns[1:]]
+# X = data_raw[data_raw.columns[1:]]
 X = data_raw[data_raw.columns[1:20]]
-#X = data_raw[data_raw.columns[37:]] #  raw features only
+# X = data_raw[data_raw.columns[37:]] #  raw features only
 X_norm = X / X.max(axis=0)
 
 scaler = StandardScaler()
@@ -84,7 +87,6 @@ def create_model():
     model.add(layers.Dense(256, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
 
-
     model.compile(optimizer='adam',
                   loss='binary_crossentropy',
                   metrics=['accuracy'])
@@ -94,14 +96,13 @@ def create_model():
 ''' 
 use model with sklearn cross-val
 '''
-for k in range(5, 400, 5):  # takes an eternity, needed to check for accuracy 'degradation' due to overfitting
+for k in range(5, 600, 5):  # takes an eternity, needed to check for accuracy 'degradation' due to overfitting
     model = KerasClassifier(build_fn=create_model, epochs=k, verbose=0)
     gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
     results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
     for i in range(10):  # repeated CV, since one iteration gives too unstable results
         scores = cross_val_score(model, X_norm, y, cv=gkf, groups=data_raw.reset_index()['file'])
         results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
-
 
     print(str(k) + ' epochs: ' + str(results.mean().mean()))
 
@@ -114,6 +115,23 @@ gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
 results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
 for i in range(10):  # repeated CV, since one iteration gives too unstable results
     scores = cross_val_score(model, X_norm, y, cv=gkf, groups=data_raw.reset_index()['file'])
+    results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
+
+print(results.mean().mean())
+
+'''
+pipeline version, to avoid data leakage from scaling before splitting 
+'''
+
+model_pipe = KerasClassifier(build_fn=create_model, epochs=100, verbose=0)
+DNN_pipeline = Pipeline(
+    steps=[('scaler', StandardScaler()),
+           ('DNN', model_pipe)]
+)
+results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
+for i in range(50):  # repeated CV, since one iteration gives too unstable results
+    print('iter ' + str(i) + ' start, time:', datetime.now().strftime("%H:%M:%S"))
+    scores = cross_val_score(DNN_pipeline, X, y, cv=gkf, groups=data_raw.reset_index()['file'])
     results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
 
 print(results.mean().mean())
