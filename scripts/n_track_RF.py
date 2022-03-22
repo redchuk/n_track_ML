@@ -315,3 +315,32 @@ plt.close()
 # x_jitter=0.3
 # https://towardsdatascience.com/you-are-underutilizing-shap-values-feature-groups-and-correlations-8df1b136e2c2
 # https://shap-lrjball.readthedocs.io/en/latest/generated/shap.dependence_plot.html
+
+'''
+Decision tree as a baseline issue
+'''
+
+for feature in X.columns:
+    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=None)
+    # acc = cross_val_score(tree, X[feature].values.reshape(-1, 1), y, cv=gkf, groups=data_sterile['file'])
+    # print('baseline ('+feature+'): ' + str(np.mean(acc)))
+    score_test = []
+    score_train = []
+    for strain, stest in gkf.split(X, y, data_sterile['file']):
+        train_data = data_sterile.iloc[strain, :]
+        test_data = data_sterile.iloc[stest, :]
+        sX = train_data[feature].values.reshape(-1, 1)
+        sy = train_data['t_serum_conc_percent']
+        sy = (sy / 10).astype('int')
+        sX_test = test_data[feature].values.reshape(-1, 1)
+        sy_test = test_data['t_serum_conc_percent']
+        sy_test = (sy_test / 10).astype('int')
+
+        tree = DecisionTreeClassifier(max_depth=1)
+        tree.fit(sX, sy)
+        score_train.append(tree.score(sX, sy))
+        # print(tree.score(sX, sy))
+        score_test.append(tree.score(sX_test, sy_test))
+        # print(tree.score(sX_test, sy_test))
+
+    print(feature + ': train ' + str(np.mean(score_train)) + ' test ' + str(np.mean(score_test)))
