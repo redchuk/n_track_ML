@@ -5,6 +5,7 @@ https://machinelearningmastery.com/use-keras-deep-learning-models-scikit-learn-p
 """
 
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import StandardScaler
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras import models
@@ -14,6 +15,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import Pipeline
 from datetime import datetime
 
+import shap
 
 ''' 
 read the data 
@@ -58,7 +60,7 @@ data preprocessing
 '''
 
 # X = data_raw[data_raw.columns[1:]]
-X = data_raw[data_raw.columns[1:20]]
+X = data_raw[data_raw.columns[1:20]]  # these are engineered features only
 # X = data_raw[data_raw.columns[37:]] #  raw features only
 X_norm = X / X.max(axis=0)
 
@@ -129,9 +131,63 @@ DNN_pipeline = Pipeline(
            ('DNN', model_pipe)]
 )
 results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
-for i in range(50):  # repeated CV, since one iteration gives too unstable results
+for i in range(1):  # repeated CV, since one iteration gives too unstable results
     print('iter ' + str(i) + ' start, time:', datetime.now().strftime("%H:%M:%S"))
     scores = cross_val_score(DNN_pipeline, X, y, cv=gkf, groups=data_raw.reset_index()['file'])
     results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
 
 print(results.mean().mean())
+
+'''
+SHAP explanation of DNN
+'''
+# todo: issue with accuracy check in n_track_RF may affect this part
+
+pred_list = []
+pred_proba_list = []
+shap_vs_list = []
+sX_test_list = []
+sy_test_list = []
+s_id_list = []
+
+for strain, stest in gkf.split(X, y, data_raw.reset_index()['file']):
+    test_data = data_raw.reset_index().iloc[stest, :]  # kept here for s_id_list
+    sX = X.iloc[strain, :]
+    sy = y.iloc[strain]
+    sX_test = X.iloc[stest, :]
+    sy_test = y.iloc[stest]
+
+    sX_test_list.append(sX_test)
+    sy_test_list.append(sy_test)
+    s_id_list.append(test_data[['file', 'particle']])
+
+    DNN_pipeline.fit(sX, sy)
+
+    pred = DNN_pipeline.predict(sX_test)
+    pred_list.append(pred)
+    pred_proba = DNN_pipeline.predict_proba(sX_test)
+    pred_proba_list.append(pred_proba)
+
+    # explainer = shap.KernelExplainer(DNN_pipeline, sX)
+    # shap_values = explainer.shap_values(sX_test)
+    # shap_vs_list.append(shap_values)
+
+    # shap.summary_plot(shap_values, sX_test, sort=False, color_bar=False, plot_size=(10,10))
+
+all_sX_test = pd.concat(sX_test_list)
+all_sy_test = pd.concat(sy_test_list)
+# all_splits_shap = np.concatenate(shap_vs_list)
+all_pred = np.concatenate(pred_list)
+all_pred_proba = np.concatenate(pred_proba_list)
+all_s_id = pd.concat(s_id_list)
+
+list_to_concat = [all_sX_test.reset_index(),
+                  all_sy_test.reset_index(),
+                  # df_all_splits_shap,
+                  pd.DataFrame(all_pred, columns=['predicted']),
+                  pd.DataFrame(all_pred_proba).add_prefix('proba_'),
+                  all_s_id]
+
+df_all = pd.concat(list_to_concat, axis=1)
+df_all['correct'] = (df_all['t_serum_conc_percent'] == df_all['predicted'])
+print((np.sum(df_all['correct'])) / (len(df_all)))
