@@ -142,6 +142,7 @@ print(results.mean().mean())
 SHAP explanation of DNN
 '''
 # todo: issue with accuracy check in n_track_RF may affect this part
+# repeated 10 times the code below returns average 0.640484, so no accuracy drop observed as in SHAP part in n_track_RF
 
 pred_list = []
 pred_proba_list = []
