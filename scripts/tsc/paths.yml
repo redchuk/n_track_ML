@@ -1,0 +1,12 @@
+
+src:
+  inceptiontime: "/proj/hajaalin/Projects/InceptionTime"
+
+output:
+  cv: "/proj/hajaalin/Projects/n_track_ML/output/cross-validation"
+  it: "/wrk/users/hajaalin/output/TSC/InceptionTime"
+
+log:
+  tsc: "/proj/hajaalin/Projects/n_track_ML/output/log"
+
+data: "/proj/hajaalin/Projects/n_track_ML/data"
