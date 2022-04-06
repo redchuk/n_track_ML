@@ -2,80 +2,51 @@ import keras
 from pathlib import Path
 import numpy as np
 import sklearn
-#from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedGroupKFold
 
-from utility import parse_config, set_logger
+from utility import parse_config
 from etl_tsc import load_data, get_X_dfX_y_groups, fsets
 
 import logging
 logger = logging.getLogger(__name__)
 
-def prepare_data_for_inception(X,y,test_size=0.33):
-    #x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=43)
+'''
+This method was copied and modified from 'prepare_data' in InceptionTime/main.py:
+https://github.com/hajaalin/InceptionTime/blob/f3fd6c5e9298ec9ca5d0fc594bb07dd1decc3718/main.py#L15
+'''
+def prepare_data_for_inception(X,y):
     # use all data, use cross-validation
     x_train = X.copy()
     y_train = y.copy()
-    #x_test = X.copy()
-    #y_test = y.copy()
 
-    #nb_classes = len(np.unique(np.concatenate((y_train, y_test), axis=0)))
     nb_classes = len(np.unique(np.concatenate((y_train,), axis=0)))
 
     # make the min to zero of labels
     #y_train, y_test = transform_labels(y_train, y_test)
 
     # save orignal y because later we will use binary
-    #y_true = y_test.astype(np.int64)
     y_true_train = y_train.astype(np.int64)
     # transform the labels from integers to one hot vectors
     enc = sklearn.preprocessing.OneHotEncoder()
-    #enc.fit(np.concatenate((y_train, y_test), axis=0).reshape(-1, 1))
     enc.fit(np.concatenate((y_train,), axis=0).reshape(-1, 1))
     y_train = enc.transform(y_train.reshape(-1, 1)).toarray()
-    #y_test = enc.transform(y_test.reshape(-1, 1)).toarray()
 
     if len(x_train.shape) == 2:  # if univariate
         # add a dimension to make it multivariate with one dimension
         x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
-        #x_test = x_test.reshape((x_test.shape[0], x_test.shape[1], 1))
 
-    #return x_train, y_train, x_test, y_test, y_true, nb_classes, y_true_train, enc
     return x_train, y_train, nb_classes, y_true_train, enc
 
-'''
-def fit_classifier():
-    input_shape = x_train.shape[1:]
 
-    classifier = create_classifier(classifier_name, input_shape, nb_classes,
-                                   output_directory)
-
-    classifier.fit(x_train, y_train, x_test, y_test, y_true)
-
-
-def create_classifier(classifier_name, input_shape, nb_classes, output_directory,
-                      verbose=False, build=True):
-    if classifier_name == 'nne':
-        from classifiers import nne
-        return nne.Classifier_NNE(output_directory, input_shape,
-                                  nb_classes, verbose)
-    if classifier_name == 'inception':
-        from classifiers import inception
-        return inception.Classifier_INCEPTION(output_directory, input_shape, nb_classes, verbose,
-                                              build=build)
-'''
-
-#from keras.wrappers.scikit_learn import KerasClassifier
 from scikeras.wrappers import KerasClassifier, KerasRegressor
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import cross_val_score
 
-#CV_OUT = ROOT + "/My Drive/Work/InceptionTime/cross-validation/"
 
-#
-# Single cross-validation run
-#
+'''
+Single cross-validation run
+'''
 def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
                      kernel_size, epochs=250, nb_classes=2):
     output_directory = output_it
@@ -142,22 +113,21 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
 
     return scores
 
-#
-# Repeat cross-validation
-#
+
+'''
+Repeat cross-validation
+'''
 def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10):
     logger.info(fset)
     X, dfX, y, groups, debugm, debugn = get_X_dfX_y_groups(data, fset)
 
-    # for now, while testing cross-validation, prepare_data returns all data in both train and test sets
-    test_size = 0.3
-    X_inc, y_inc, nb_classes, y_true, enc = prepare_data_for_inception(X,y,test_size=test_size)
+    # prepare_data_for inception returns all, no split to train and test sets
+    X_inc, y_inc, nb_classes, y_true, enc = prepare_data_for_inception(X,y)
 
     logger.debug("X_inc: " + str(X_inc.shape))
     logger.debug("y_inc: " + str(y_inc.shape))
 
     cv = StratifiedGroupKFold(n_splits=4, shuffle=True)
-    #cv = GroupKFold(n_splits=4)
 
     scores_all = []
     for i in range(repeats):
@@ -179,8 +149,6 @@ def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, r
     return scores
 
 
-# In[ ]:
-
 import click
 from datetime import datetime
 import pandas as pd
@@ -188,7 +156,6 @@ import sys
 import time
 
 @click.command()
-#@click.argument("config_file", type=str, default="scripts/config.yml")
 @click.option("--config_paths", type=str, default="scripts/tsc/paths.yml")
 @click.option("--config_tsc", type=str, default="scripts/tsc/config.yml")
 @click.option("--loop_epochs", is_flag=True, default=False)
@@ -202,9 +169,7 @@ def cv_inceptiontime(config_paths, config_tsc, loop_epochs, loop_fsets):
     now = datetime.now().strftime("%Y-%m%d-%H%M")
 
     # configure logger
-    #global logger
     log_file = log_dir + "/cv_inceptiontime_" + now + ".log"
-    #logger = set_logger(log_file)
     logger.setLevel(logging.DEBUG)
     file_handler = logging.FileHandler(log_file, mode="w")
     formatter = logging.Formatter(
@@ -216,7 +181,7 @@ def cv_inceptiontime(config_paths, config_tsc, loop_epochs, loop_fsets):
     print("Logging to " + log_file)
 
 
-    # make InceptionTime source available
+    # add InceptionTime source to Python path
     src_inceptiontime = paths["src"]["inceptiontime"]
     sys.path.insert(1, src_inceptiontime)
 
