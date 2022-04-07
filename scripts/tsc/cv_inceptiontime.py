@@ -156,20 +156,26 @@ import sys
 import time
 
 @click.command()
-@click.option("--config_paths", type=str, default="scripts/tsc/paths.yml")
-@click.option("--config_tsc", type=str, default="scripts/tsc/config.yml")
-@click.option("--loop_epochs", is_flag=True, default=False)
+@click.option("--paths", type=str, default="paths.yml")
+@click.option("--kernel_size", type=int, default=20)
+@click.option("--epochs", type=int, default=100)
+@click.option("--fset", type=click.Choice(["f_mot","f_mot_morph","f_mot_morph_dyn"]), default="f_mot_morph")
 @click.option("--loop_fsets", is_flag=True, default=False)
-def cv_inceptiontime(config_paths, config_tsc, loop_epochs, loop_fsets):
-    paths = parse_config(config_paths)
-    config = parse_config(config_tsc)
+@click.option("--repeats", type=int, default=20)
+@click.option("--job_name", type=str, default="tsc_it")
+@click.option("--job_id", type=str)
+@click.option("--now", type=str)
+def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_name, job_id, now):
+    paths = parse_config(paths)
 
-    log_dir = paths["log"]["tsc"]
-    
-    now = datetime.now().strftime("%Y-%m%d-%H%M")
+    log_dir = Path(paths["log"]["tsc"])
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    if not now:
+        now = datetime.now().strftime("%Y%m%d%H%M%S")
 
     # configure logger
-    log_file = log_dir + "/cv_inceptiontime_" + now + ".log"
+    log_file = log_dir / (f"cv_inceptiontime_%s_%s_%s.log" % (job_name, now, job_id))
     logger.setLevel(logging.DEBUG)
     file_handler = logging.FileHandler(log_file, mode="w")
     formatter = logging.Formatter(
@@ -178,7 +184,7 @@ def cv_inceptiontime(config_paths, config_tsc, loop_epochs, loop_fsets):
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     logger.info(f"Finished logger configuration!")
-    print("Logging to " + log_file)
+    print("Logging to " + str(log_file))
 
 
     # add InceptionTime source to Python path
@@ -186,58 +192,43 @@ def cv_inceptiontime(config_paths, config_tsc, loop_epochs, loop_fsets):
     sys.path.insert(1, src_inceptiontime)
 
     # output folders
-    output_cv = paths["output"]["cv"]
-    output_it = paths["output"]["it"]
+    output_cv = Path(paths["output"]["cv"]) / job_name
+    output_cv.mkdir(parents=True, exist_ok=True)
+    output_it = Path(paths["output"]["it"]) / job_id
+    output_it.mkdir(parents=True, exist_ok=True)
+    output_it = str(output_it) + "/"
 
     # read the data 
-    data_dir = paths['data']
-    raw_data_file = config["etl"]["raw_data_file"]
+    data_dir = paths["data"]["dir"]
+    raw_data_file = paths["data"]["raw_data_file"]
 
     data = load_data(Path(data_dir) / raw_data_file)
     logger.info('Loaded data shape: ' + str(data.shape))
-
-    kernel_size = config["inceptiontime"]["kernel_size"]
-    repeats = config["inceptiontime"]["repeats"]
 
 
     tic = time.perf_counter()
     
     scores_all = []
 
-    if loop_epochs:
-        logger.info("loop epochs")
-        scores_file = "loop_epochs_k" + str(kernel_size) + "_" + now + ".csv"
-        fset = "f_mot_morph"
-        for k in range(5, 600, 10):
-            scores = inceptiontime_cv_repeat(data, output_it, fset, epochs=k, repeats=repeats)
-            scores_all.append(scores)
-
-    elif loop_fsets:
+    if loop_fsets:
         logger.info("loop feature sets")
-        epochs = config["inceptiontime"]["epochs"]
-        scores_file = "inceptiontime_k" + str(kernel_size) + "_e" + str(epochs) + "_" + now + ".csv"
-        for fset in fsets.keys():
-            scores = inceptiontime_cv_repeat(data, output_it, fset, epochs=epochs, repeats=repeats)
+
+        for f in fsets.keys():
+            scores = inceptiontime_cv_repeat(data, output_it, f, epochs=epochs, repeats=repeats)
             scores_all.append(scores)
 
     else:
         logger.info("single fset")
-        epochs = config["inceptiontime"]["epochs"]
-        fset = config["inceptiontime"]["fset"]
-        scores_file = "inceptiontime_k" + str(kernel_size) + "_e" + str(epochs) + "_" + now + ".csv"
         scores = inceptiontime_cv_repeat(data, output_it, fset, epochs=epochs, repeats=repeats)
         scores_all.append(scores)
         
     toc = time.perf_counter()
     logger.info(f"Finished processing in {(toc-tic) / 60:0.1f} minutes.")
-    
-    # store output
-    output_dir = paths["output"]["cv"]
-    #output_csv = config["output"]["csv"]
+            
     scores = pd.concat(scores_all)
 
-
-    scores_file = Path(output_dir) / scores_file
+    scores_file = "cv_" + job_name + "_k" + str(kernel_size) + "_e" + str(epochs) + "_" + now + ".csv"
+    scores_file = output_cv / scores_file
     scores.to_csv(scores_file, index=False)
     logger.info("Wrote scores to " + str(scores_file))
 
