@@ -278,8 +278,8 @@ shap.summary_plot(all_splits_shap, all_sX_test, sort=False, color_bar=False, plo
 
 df_all_splits_shap = pd.DataFrame(all_splits_shap, columns=all_sX_test.columns).add_prefix('shap_')
 
-list_to_concat = [all_sX_test,
-                  all_sy_test,
+list_to_concat = [all_sX_test.reset_index(),
+                  all_sy_test.reset_index(),
                   df_all_splits_shap,
                   pd.DataFrame(all_pred, columns=['predicted']),
                   pd.DataFrame(all_pred_proba).add_prefix('proba_'),
@@ -288,7 +288,6 @@ list_to_concat = [all_sX_test,
 df_all = pd.concat(list_to_concat, axis=1)
 df_all['correct'] = (df_all['t_serum_conc_percent'] == df_all['predicted'])
 print((np.sum(df_all['correct'])) / (len(df_all)))
-# todo: why accuracy is lower here?
 
 # correlation for features
 plt.figure(figsize=(8, 7))
