@@ -150,25 +150,25 @@ sX_test_list = []
 sy_test_list = []
 s_id_list = []
 
-for strain, stest in gkf.split(X, y, data_raw.reset_index()['file']):
+for strain, stest in gkf.split(X_scaled, y, data_raw.reset_index()['file']):
     test_data = data_raw.reset_index().iloc[stest, :]  # kept here for s_id_list
-    sX = X.iloc[strain, :]
+    sX = pd.DataFrame(X_scaled).iloc[strain, :]
     sy = y.iloc[strain]
-    sX_test = X.iloc[stest, :]
+    sX_test = pd.DataFrame(X_scaled).iloc[stest, :]
     sy_test = y.iloc[stest]
 
     sX_test_list.append(sX_test)
     sy_test_list.append(sy_test)
     s_id_list.append(test_data[['file', 'particle']])
 
-    DNN_pipeline.fit(sX, sy)
+    model.fit(sX, sy)
 
-    pred = DNN_pipeline.predict(sX_test)
+    pred = model.predict(sX_test)
     pred_list.append(pred)
-    pred_proba = DNN_pipeline.predict_proba(sX_test)
+    pred_proba = model.predict_proba(sX_test)
     pred_proba_list.append(pred_proba)
 
-    # explainer = shap.KernelExplainer(DNN_pipeline, sX)
+    explainer = shap.KernelExplainer(model, sX_test)
     # shap_values = explainer.shap_values(sX_test)
     # shap_vs_list.append(shap_values)
 
@@ -191,3 +191,71 @@ list_to_concat = [all_sX_test.reset_index(),
 df_all = pd.concat(list_to_concat, axis=1)
 df_all['correct'] = (df_all['t_serum_conc_percent'] == df_all['predicted'])
 print((np.sum(df_all['correct'])) / (len(df_all)))
+
+'''
+SHAP explanation of DNN attempt
+Weird unstructured block, which somehow gives realistic val_accuracy in splits, and even returns some sort of 
+averaged SHAP values for each feature. The rest doesn't work, no swarm plot, no aggregation for splits etc.
+'''
+
+gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
+
+
+pred_list = []
+pred_proba_list = []
+shap_vs_list = []
+sX_test_list = []
+sy_test_list = []
+s_id_list = []
+
+for strain, stest in gkf.split(X_scaled, y, data_raw.reset_index()['file']):
+    #test_data = data_raw.reset_index().iloc[stest, :]  # kept here for s_id_list
+    sX = pd.DataFrame(X_scaled, columns=X.columns).iloc[strain, :]
+    sy = y.iloc[strain]
+    sX_test = pd.DataFrame(X_scaled, columns=X.columns).iloc[stest, :]
+    sy_test = y.iloc[stest]
+
+    sX_test_list.append(sX_test)
+    sy_test_list.append(sy_test)
+    #s_id_list.append(test_data[['file', 'particle']])
+
+    model = models.Sequential()
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(1, activation='sigmoid'))
+
+    model.compile(optimizer='adam',
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+
+
+    model.fit(sX, sy, epochs=100, validation_data=(sX_test, sy_test))
+
+    pred = model.predict(sX_test)
+    pred_list.append(pred)
+    # pred_proba = model.predict_proba(sX_test)
+    # pred_proba_list.append(pred_proba)
+
+    explainer = shap.KernelExplainer(model, sX_test)
+    shap_values = explainer.shap_values(sX_test)
+    shap_vs_list.append(shap_values)
+
+    shap.summary_plot(shap_values, sX_test, sort=False, color_bar=False, plot_size=(20,10))
+    #shap.plots.beeswarm(shap_values, max_display=20)
+
+all_sX_test = pd.concat(sX_test_list)
+all_sy_test = pd.concat(sy_test_list)
+all_splits_shap = np.concatenate(shap_vs_list)
+all_pred = np.concatenate(pred_list)
+#all_pred_proba = np.concatenate(pred_proba_list)
+#all_s_id = pd.concat(s_id_list)
+
+
+#plt.title('aggregated')
+shap.summary_plot(all_splits_shap, all_sX_test, sort=False, color_bar=False, plot_size=(25, 10))
+
