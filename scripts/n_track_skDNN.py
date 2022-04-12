@@ -60,7 +60,7 @@ data preprocessing
 '''
 
 # X = data_raw[data_raw.columns[1:]]
-X = data_raw[data_raw.columns[1:20]]  # these are engineered features only
+X = data_raw[data_raw.columns[1:21]]  # these are engineered features only
 # X = data_raw[data_raw.columns[37:]] #  raw features only
 X_norm = X / X.max(axis=0)
 
@@ -131,7 +131,7 @@ DNN_pipeline = Pipeline(
            ('DNN', model_pipe)]
 )
 results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
-for i in range(1):  # repeated CV, since one iteration gives too unstable results
+for i in range(30):  # repeated CV, since one iteration gives too unstable results
     print('iter ' + str(i) + ' start, time:', datetime.now().strftime("%H:%M:%S"))
     scores = cross_val_score(DNN_pipeline, X, y, cv=gkf, groups=data_raw.reset_index()['file'])
     results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
@@ -245,7 +245,7 @@ for strain, stest in gkf.split(X_scaled, y, data_raw.reset_index()['file']):
     shap_values = explainer.shap_values(sX_test)
     shap_vs_list.append(shap_values)
 
-    shap.summary_plot(shap_values, sX_test, sort=False, color_bar=False, plot_size=(20,10))
+    shap.summary_plot(shap_values, sX_test, sort=False, color_bar=False, plot_size=(25,10))
     #shap.plots.beeswarm(shap_values, max_display=20)
 
 all_sX_test = pd.concat(sX_test_list)
