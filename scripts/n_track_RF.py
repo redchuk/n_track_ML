@@ -280,15 +280,37 @@ df_all_splits_shap = pd.DataFrame(all_splits_shap, columns=all_sX_test.columns).
 
 list_to_concat = [all_sX_test.reset_index(),
                   all_sy_test.reset_index(),
-                  df_all_splits_shap,
-                  pd.DataFrame(all_pred, columns=['predicted']),
-                  pd.DataFrame(all_pred_proba).add_prefix('proba_'),
-                  all_s_id]
+                  df_all_splits_shap.reset_index(),
+                  pd.DataFrame(all_pred, columns=['predicted']).reset_index(),
+                  pd.DataFrame(all_pred_proba).add_prefix('proba_').reset_index(),
+                  all_s_id.reset_index()]
 
 df_all = pd.concat(list_to_concat, axis=1)
 df_all['correct'] = (df_all['t_serum_conc_percent'] == df_all['predicted'])
 print((np.sum(df_all['correct'])) / (len(df_all)))
 
+'''
+Small block to check if SHAP correlations are meaningful (spoiler alert: no), and to study long jumpers
+'''
+
+
+df_all.to_csv('C:/Users/redchuk/python/plot_trajectory_test/df_all.csv')
+jumpers = df_all[df_all['f_outliers3SD_diff_xy']==1]
+
+jumpers = jumpers[['file',
+         'particle',
+         'f_mean_diff_xy_micron',
+         'f_max_diff_xy_micron',
+         'f_min_dist_range',
+         'f_total_min_dist',
+         'f_outliers2SD_diff_xy',
+         't_serum_conc_percent',
+         'proba_0',
+         'proba_1',
+         'correct', ]]
+
+jumpers.to_csv('C:/Users/redchuk/python/plot_trajectory_test/jumpers.csv')
+# todo: same with mean_diff_xy, get jumper images from Antti
 # correlation for features
 plt.figure(figsize=(8, 7))
 ax = sns.heatmap(all_sX_test.corr())
@@ -316,7 +338,7 @@ plt.close()
 # https://shap-lrjball.readthedocs.io/en/latest/generated/shap.dependence_plot.html
 
 '''
-Decision tree as a baseline issue
+Decision tree as a baseline issue (solved)
 '''
 
 for feature in X.columns:
