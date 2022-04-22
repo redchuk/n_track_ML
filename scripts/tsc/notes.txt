@@ -1,0 +1,25 @@
+python create_sbatch.py --job_name loop_epochs_k15 --loop_epochs 10 600 10 --options "--kernel_size=15 --repeats=20" --sbatch_dir sbatch/loop_epochs_k15 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+
+
+#
+# 20220422
+#
+
+conda activate jinja2
+
+python create_sbatch.py --job_name le_k15_f3 --loop_epochs 10 600 10 --options "--fset f_mot_morph_dyn --kernel_size=15 --repeats=20" --sbatch_dir sbatch/le_k15_f3 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_k15_f1 --loop_epochs 10 600 10 --options "--fset f_mot --kernel_size=15 --repeats=20" --sbatch_dir sbatch/le_k15_f1 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+conda deactivate
+(repeat until no conda environment selected)
+
+for s in $(ls sbatch/le_k15_f3/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k15_f1/*.sh); do sbatch $s; done;
+
+$ squeue -u hajaalin|wc -l
+120
+
+$ date
+Fri 22 Apr 16:52:10 EEST 2022
