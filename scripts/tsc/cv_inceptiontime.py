@@ -60,6 +60,7 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
                                                       verbose=verbose)
     def create_model():
         #print(classifier_keras.model)
+        #classifier_keras.model.summary()
         return classifier_keras.model
 
     batch_size = int(min(X_inc.shape[0] / 10, 16))
@@ -168,7 +169,7 @@ import time
 def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_name, job_id, now):
     paths = parse_config(paths)
 
-    log_dir = Path(paths["log"]["tsc"])
+    log_dir = Path(paths["log"]["tsc"]) / job_name / now
     log_dir.mkdir(parents=True, exist_ok=True)
 
     if not now:
@@ -192,7 +193,7 @@ def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_
     sys.path.insert(1, src_inceptiontime)
 
     # output folders
-    output_cv = Path(paths["output"]["cv"]) / job_name
+    output_cv = Path(paths["output"]["cv"]) / job_name / now
     output_cv.mkdir(parents=True, exist_ok=True)
     output_it = Path(paths["output"]["it"]) / job_id
     output_it.mkdir(parents=True, exist_ok=True)

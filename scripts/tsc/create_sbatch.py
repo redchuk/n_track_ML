@@ -58,8 +58,11 @@ date
 @click.option("--loop_epochs", type=(int,int,int))
 
 def create_sbatch(job_name, job_dir, cluster, partition, time, paths, options, sbatch_dir, loop_epochs):
+    job_dir = Path(job_dir) / job_name
+    job_dir.mkdir(exist_ok=True, parents=True)
+        
     values = {'job_name': job_name, \
-              'job_dir': job_dir, \
+              'job_dir': str(job_dir), \
               'cluster': cluster, \
               'partition': partition, \
               'time': time, \
@@ -68,6 +71,7 @@ def create_sbatch(job_name, job_dir, cluster, partition, time, paths, options, s
     }
 
     sbatch_dir = Path(sbatch_dir)
+    sbatch_dir.mkdir(exist_ok=True, parents=True)
     
     if loop_epochs:
         emin,emax,edelta = loop_epochs
