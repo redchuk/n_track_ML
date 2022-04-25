@@ -4,9 +4,11 @@ src:
 
 output:
   cv: "/proj/hajaalin/Projects/n_track_ML/output/cross-validation"
-  it: "/wrk/users/hajaalin/output/TSC/InceptionTime"
+  it: "/wrk/users/hajaalin/output/TSC/InceptionTime/"
 
 log:
   tsc: "/proj/hajaalin/Projects/n_track_ML/output/log"
 
-data: "/proj/hajaalin/Projects/n_track_ML/data"
+data:
+  dir: "/proj/hajaalin/Projects/n_track_ML/data"
+  raw_data_file: "63455ea_data_chromatin_live.csv"
