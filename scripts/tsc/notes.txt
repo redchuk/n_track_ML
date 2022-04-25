@@ -23,3 +23,26 @@ $ squeue -u hajaalin|wc -l
 
 $ date
 Fri 22 Apr 16:52:10 EEST 2022
+
+
+#
+# 20220425
+#
+
+(base) hajaalin@dx5-biotek4:/home/ad/turso-proj/hajaalin/Projects/n_track_ML/output/cross-validation/le_k15_f2$ cp -r loop_epochs_k15 le_k15_f2
+
+(base) hajaalin@dx5-biotek4:/home/ad/turso-proj/hajaalin/Projects/n_track_ML/output/cross-validation/le_k15_f2$ ls |grep -v 202204211541
+cv_loop_epochs_k15_k15_e25_202204071123.csv
+cv_loop_epochs_k15_k15_e25_202204071616.csv
+cv_loop_epochs_k15_k15_e5_202204070955.csv
+cv_loop_epochs_k15_k15_e5_202204071616.csv
+
+rm cv_loop_epochs_k15_k15_e25_202204071123.csv cv_loop_epochs_k15_k15_e25_202204071616.csv cv_loop_epochs_k15_k15_e5_202204070955.csv cv_loop_epochs_k15_k15_e5_202204071616.csv
+
+# continue epochs from 600
+python create_sbatch.py --job_name le_k15_f1 --loop_epochs 600 1200 10 --options "--fset f_mot --kernel_size=15 --repeats=20" --sbatch_dir sbatch/le_k15_f1/2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_k15_f2 --loop_epochs 600 1200 10 --options "--fset f_mot_morph --kernel_size=15 --repeats=20" --sbatch_dir sbatch/le_k15_f2/2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_k15_f1/2/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k15_f2/2/*.sh); do sbatch $s; done;
