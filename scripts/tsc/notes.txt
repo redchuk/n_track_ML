@@ -46,3 +46,17 @@ python create_sbatch.py --job_name le_k15_f2 --loop_epochs 600 1200 10 --options
 
 for s in $(ls sbatch/le_k15_f1/2/*.sh); do sbatch $s; done;
 for s in $(ls sbatch/le_k15_f2/2/*.sh); do sbatch $s; done;
+
+
+
+#
+# 20220426
+#
+
+source ~/.bashrc
+conda activate jinja2
+
+# continue epochs from 1200, only f1
+python create_sbatch.py --job_name le_k15_f1 --loop_epochs 1200 1800 10 --options "--fset f_mot --kernel_size=15 --repeats=20" --sbatch_dir sbatch/le_k15_f1/3 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_k15_f1/3/*.sh); do sbatch $s; done;
