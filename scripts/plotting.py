@@ -56,7 +56,7 @@ all_chr = pd.concat([chr1,
                      # chr10,
                      # chr13,
                      # chrX,
-                     telo,
+                     # telo,
                      data_to_plot[hue]], axis=1)
 # all_chr.columns
 
@@ -64,9 +64,11 @@ multi_2group = dabest.load(all_chr, idx=(('chr1, 10%', 'chr1, 0.3%'),
                                          # ('chr10, 10%', 'chr10, 0.3%'),
                                          # ('chr13, 10%', 'chr13, 0.3%'),
                                          # ('chrX, 10%', 'chrX, 0.3%'),
-                                         ('telo, 10%', 'telo, 0.3%'),
+                                         # ('telo, 10%', 'telo, 0.3%'),
                                          ))
 # CI is 95% by default in dabest
+print(multi_2group.mean_diff)
+
 
 multi_2group.mean_diff.plot(raw_marker_size=3,
                             es_marker_size=6,
@@ -76,6 +78,9 @@ multi_2group.mean_diff.plot(raw_marker_size=3,
                             custom_palette='Paired',
                             # swarm_ylim=(-0.05, 0.05),
                             )
+
+plt.show()
+plt.close()
 
 """
 Plotting the correlations in serum and in starvation, to check for homolog_chr-specific behaviour
