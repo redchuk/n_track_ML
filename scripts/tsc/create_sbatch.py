@@ -73,12 +73,13 @@ def create_sbatch(job_name, job_dir, cluster, partition, time, paths, options, s
     sbatch_dir = Path(sbatch_dir)
     sbatch_dir.mkdir(exist_ok=True, parents=True)
     
+    # add a common timestamp to all subtasks
+    now = datetime.now().strftime("%Y%m%d%H%M")
+
     if loop_epochs:
         emin,emax,edelta = loop_epochs
         assert not "--epochs" in options, "--epochs conflicts with --loop_epochs."
 
-        # add a common timestamp to all subtasks
-        now = datetime.now().strftime("%Y%m%d%H%M")
 
         # remember original options
         for epochs in range(emin,emax,edelta):
@@ -92,8 +93,9 @@ def create_sbatch(job_name, job_dir, cluster, partition, time, paths, options, s
                 print(sbatch, file=f)
 
     else:
+        values['options'] = options + " --now=" + now
         sbatch = Environment().from_string(BASH).render(values)
-        filename = "sbatch_" + job_name + "_e" + str(epochs) + ".sh"
+        filename = "sbatch_" + job_name + ".sh"
 
         with open(sbatch_dir / filename, 'w') as f:
             print(sbatch, file=f)
