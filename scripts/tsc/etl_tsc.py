@@ -131,6 +131,7 @@ fsets = {}
 fsets['f_mot'] = ['x','y','min_dist_pxs','serum_conc_percent','file']
 fsets['f_mot_morph'] = fsets['f_mot'] + ['area_micron','perimeter_au']
 fsets['f_mot_morph_dyn'] = fsets['f_mot'] + ['dxy','angle','dangle','darea','dperimeter']
+fsets['f_mot_morph_dyn_2'] = fsets['f_mot_morph'] + ['dxy','angle','dangle','darea','dperimeter']
 
 #print(fsets['f_mot_morph_dyn'])
 
