@@ -104,3 +104,37 @@ for s in $(ls sbatch/k20/*.sh); do sbatch $s; done;
 for s in $(ls sbatch/k15/*.sh); do sbatch $s; done;
 for s in $(ls sbatch/k25/*.sh); do sbatch $s; done;
 for s in $(ls sbatch/k30/*.sh); do sbatch $s; done;
+
+
+#
+# 22020507
+#
+
+# test code with normalization added and with a fixed feature set
+python create_sbatch.py --job_name norm_k20_f4 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --epochs=1250 --repeats=20" --sbatch_dir sbatch/norm_k20 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+
+
+#
+# 22020508
+#
+
+# rerun epoch loops now that normalization has been added in cv_inceptiontime.py
+### TODO repeat 30 times like Taras does (first check if they finish with 20)
+
+conda activate jinja2
+
+python create_sbatch.py --job_name le_norm_k20_f1 --loop_epochs 100 1400 20 --options "--fset f_mot --kernel_size=20 --repeats=20" --sbatch_dir sbatch/le_norm_k20_f1 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm_k20_f2 --loop_epochs 100 1000 20 --options "--fset f_mot_morph --kernel_size=20 --repeats=20" --sbatch_dir sbatch/le_norm_k20_f2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm_k20_f3 --loop_epochs 100 500 20 --options "--fset f_mot_morph_dyn --kernel_size=20 --repeats=20" --sbatch_dir sbatch/le_norm_k20_f3 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm_k20_f4 --loop_epochs 100 500 20 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=20" --sbatch_dir sbatch/le_norm_k20_f4 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_norm_k20_f1/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_norm_k20_f2/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_norm_k20_f3/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_norm_k20_f4/*.sh); do sbatch $s; done;
+
+
