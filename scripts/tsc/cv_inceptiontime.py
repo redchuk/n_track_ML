@@ -44,6 +44,24 @@ from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import cross_val_score
 
 
+def standard_scale_x(_X):
+    scaled = np.ndarray(_X.shape)
+
+    # loop over samples
+    for i in range(_X.shape[0]):
+        # loop over features
+        for j in range(_X.shape[1]):
+            # calculate mean and std for the time series
+            u = np.mean(_X[i][j])
+            s = np.std(_X[i][j])
+            # scale the time series
+            scaled[i][j] = (_X[i][j] - u) / s
+            #print(np.mean(scaled[i][j]))
+            #print(np.std(scaled[i][j]))
+
+    return scaled
+
+
 '''
 Single cross-validation run
 '''
@@ -83,13 +101,18 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         #print(y_inc[train_index])
         #break
 
-        #classifier_keras = inception.Classifier_INCEPTION(output_directory, input_shape, nb_classes,                                                           nb_epochs=epochs, verbose=verbose)
+        # scale training data to mean,std 0,1
+        X_train_scaled = standard_scale_x(X_inc[train_index])
+        
         classifier = KerasClassifier(model=create_model, \
                                      epochs=epochs, \
                                      batch_size=batch_size, \
                                      verbose=verbose)
-        classifier.fit(X_inc[train_index],y_inc[train_index])
-        pred = classifier.predict(X_inc[val_index])
+        classifier.fit(X_train_scaled, y_inc[train_index])
+
+        # scale validation data to mean,std 0,1
+        X_val_scaled = standard_scale_x(X_inc[val_index])
+        pred = classifier.predict(X_val_scaled)
 
         truth = y_true[val_index]
         #print('truth')
@@ -118,7 +141,7 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
 '''
 Repeat cross-validation
 '''
-def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10):
+def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10,job_id=''):
     logger.info(fset)
     X, dfX, y, groups, debugm, debugn = get_X_dfX_y_groups(data, fset)
 
@@ -143,7 +166,8 @@ def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, r
     scores['cv'] = str(cv)
     scores['fset'] = fset
     scores['kernel_size'] = kernel_size
-    scores['epochs'] = epochs   
+    scores['epochs'] = epochs
+    scores['job_id'] = job_id
 
     logger.info(f"inceptiontime_cv_repeat: %s feature_set:%s, kernel_size:%d, epochs:%d, accuracy:%f0.00" % (str(cv), fset, kernel_size, epochs, scores['accuracy'].mean()))
     
@@ -160,7 +184,7 @@ import time
 @click.option("--paths", type=str, default="paths.yml")
 @click.option("--kernel_size", type=int, default=20)
 @click.option("--epochs", type=int, default=100)
-@click.option("--fset", type=click.Choice(["f_mot","f_mot_morph","f_mot_morph_dyn"]), default="f_mot_morph")
+@click.option("--fset", type=click.Choice(["f_mot","f_mot_morph","f_mot_morph_dyn", "f_mot_morph_dyn_2"]), default="f_mot_morph")
 @click.option("--loop_fsets", is_flag=True, default=False)
 @click.option("--repeats", type=int, default=20)
 @click.option("--job_name", type=str, default="tsc_it")
@@ -215,12 +239,12 @@ def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_
         logger.info("loop feature sets")
 
         for f in fsets.keys():
-            scores = inceptiontime_cv_repeat(data, output_it, f, kernel_size=kernel_size, epochs=epochs, repeats=repeats)
+            scores = inceptiontime_cv_repeat(data, output_it, f, kernel_size=kernel_size, epochs=epochs, repeats=repeats, job_id=job_id)
             scores_all.append(scores)
 
     else:
         logger.info("single fset")
-        scores = inceptiontime_cv_repeat(data, output_it, fset, kernel_size=kernel_size, epochs=epochs, repeats=repeats)
+        scores = inceptiontime_cv_repeat(data, output_it, fset, kernel_size=kernel_size, epochs=epochs, repeats=repeats, job_id=job_id)
         scores_all.append(scores)
         
     toc = time.perf_counter()
