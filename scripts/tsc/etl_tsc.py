@@ -38,16 +38,20 @@ def initial_filtering(data):
 
 
 def normalize_xy(data):
-    # add x and y max per time series
-    data = data.join(data.groupby(['file','particle'])['x'].max(), on=['file','particle'], rsuffix='_max')
-    data = data.join(data.groupby(['file','particle'])['y'].max(), on=['file','particle'], rsuffix='_max')
-    data = data.join(data.groupby(['file','particle'])['x'].min(), on=['file','particle'], rsuffix='_min')
-    data = data.join(data.groupby(['file','particle'])['y'].min(), on=['file','particle'], rsuffix='_min')
+    # add x and y mean per time series
+    data = data.join(data.groupby(['file','particle'])['x'].mean(), on=['file','particle'], rsuffix='_mean')
+    data = data.join(data.groupby(['file','particle'])['y'].mean(), on=['file','particle'], rsuffix='_mean')
 
-    # normalize x and y
-    data['x_norm'] = data['x'] - data['x_min']
-    data['y_norm'] = data['y'] - data['y_min']
+    # make x and y have zero mean
+    data['x_norm'] = data['x'] - data['x_mean']
+    data['y_norm'] = data['y'] - data['y_mean']
 
+    data['x_orig'] = data['x']
+    data['y_orig'] = data['y']
+
+    data['x'] = data['x_norm']
+    data['y'] = data['y_norm']
+    
     return data
 
 
@@ -139,7 +143,7 @@ fsets['f_mot_morph_dyn_2'] = fsets['f_mot_morph'] + ['dxy','angle','dangle','dar
 def get_X_dfX_y_groups(data, f_set_name):
     data = data.copy()
     data = initial_filtering(data)
-    #data = normalize_xy(data)
+    data = normalize_xy(data)
     data = create_instance_index(data)
     data = add_nframes_col(data)
     debug0 = data.copy()
