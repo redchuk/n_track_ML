@@ -44,7 +44,7 @@ from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import cross_val_score
 
 
-def standard_scale_x(_X):
+def standard_scale_x_by_series(_X):
     scaled = np.ndarray(_X.shape)
 
     # loop over samples
@@ -61,6 +61,48 @@ def standard_scale_x(_X):
 
     return scaled
 
+
+def get_standard_scaling(X):
+    logger.debug("get_standard_scaling")
+    logger.debug(X.shape)
+    # X dimensions:
+    # i: samples, ~200 series
+    # j: features, ~3-10 features
+    # k: the time series, ~30 steps
+    mean = np.mean(X,axis=(0,2))
+    std = np.std(X, axis=(0,2))
+
+    logger.debug(mean.shape)
+    logger.debug(std.shape)
+    
+    return mean,std
+
+def apply_standard_scaling(X,mean,std):
+    logger.debug("apply_standard_scaling")
+    logger.debug(X.shape)
+    # X dimensions:
+    # i: samples, ~200 series
+    # j: features, ~3-10 features
+    # k: the time series, ~30 steps
+
+    # transpose X so that features are on the trailing index
+    Xt = np.transpose(X,(0,2,1))
+    logger.debug(Xt.shape)
+
+    # transpose mean and std so that features are on the trailing index
+    mean = np.transpose(mean)
+    std = np.transpose(std)
+    logger.debug(mean.shape)
+    logger.debug(std.shape)
+    # trust numpy broadcasting
+    Xt = Xt - mean
+    Xt = Xt / std
+
+    Xt = np.transpose(Xt,(0,2,1))
+    logger.debug(Xt.shape)
+
+    return Xt
+    
 
 '''
 Single cross-validation run
@@ -102,7 +144,15 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         #break
 
         # scale training data to mean,std 0,1
-        X_train_scaled = standard_scale_x(X_inc[train_index])
+        #X_train_scaled = standard_scale_x_by_series(X_inc[train_index])
+        mean,std = get_standard_scaling(X_inc[train_index])
+        logger.debug("mean:")
+        logger.debug(mean)
+        logger.debug("std:")
+        logger.debug(std)
+        X_train_scaled = apply_standard_scaling(X_inc[train_index],mean,std)
+        #logger.debug("scaled2")
+        #logger.debug(X_train_scaled)
         
         classifier = KerasClassifier(model=create_model, \
                                      epochs=epochs, \
@@ -111,7 +161,8 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         classifier.fit(X_train_scaled, y_inc[train_index])
 
         # scale validation data to mean,std 0,1
-        X_val_scaled = standard_scale_x(X_inc[val_index])
+        #X_val_scaled = standard_scale_x_by_series(X_inc[val_index])
+        X_val_scaled = apply_standard_scaling(X_inc[val_index],mean,std)
         pred = classifier.predict(X_val_scaled)
 
         truth = y_true[val_index]
