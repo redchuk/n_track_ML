@@ -138,3 +138,38 @@ for s in $(ls sbatch/le_norm_k20_f3/*.sh); do sbatch $s; done;
 for s in $(ls sbatch/le_norm_k20_f4/*.sh); do sbatch $s; done;
 
 
+#
+# 22020509
+#
+
+# maybe the scaling was not correct, retry with a fixed version.
+# focus on smaller epoch numbers
+
+
+conda activate jinja2
+
+python create_sbatch.py --job_name le_norm2_k20_f1 --loop_epochs 10 300 10 --options "--fset f_mot --kernel_size=20 --repeats=20" --sbatch_dir sbatch/le_norm2_k20_f1 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k20_f2 --loop_epochs 10 300 10 --options "--fset f_mot_morph --kernel_size=20 --repeats=20" --sbatch_dir sbatch/le_norm2_k20_f2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k20_f3 --loop_epochs 10 300 10 --options "--fset f_mot_morph_dyn --kernel_size=20 --repeats=20" --sbatch_dir sbatch/le_norm2_k20_f3 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k20_f4 --loop_epochs 10 300 10 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=20" --sbatch_dir sbatch/le_norm2_k20_f4 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_norm2_k20_f1/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_norm2_k20_f2/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_norm2_k20_f3/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_norm2_k20_f4/*.sh); do sbatch $s; done;
+
+
+# check even smaller numbers
+
+python create_sbatch.py --job_name le_norm2_k20_f1 --loop_epochs 2 50 2 --options "--fset f_mot --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_norm2_k20_step2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k20_f2 --loop_epochs 2 50 2 --options "--fset f_mot_morph --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_norm2_k20_step2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k20_f3 --loop_epochs 2 50 2 --options "--fset f_mot_morph_dyn --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_norm2_k20_step2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k20_f4 --loop_epochs 2 50 2 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_norm2_k20_step2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_norm2_k20_step2/*.sh); do sbatch $s; done;
