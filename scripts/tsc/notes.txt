@@ -173,3 +173,29 @@ python create_sbatch.py --job_name le_norm2_k20_f3 --loop_epochs 2 50 2 --option
 python create_sbatch.py --job_name le_norm2_k20_f4 --loop_epochs 2 50 2 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_norm2_k20_step2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
 
 for s in $(ls sbatch/le_norm2_k20_step2/*.sh); do sbatch $s; done;
+
+
+#
+# 20220517
+#
+
+# less epochs makes sense
+# try another kernel_size set (k=15)
+# add more repeats
+
+python create_sbatch.py --job_name le_norm2_k15_f1 --loop_epochs 2 80 2 --options "--fset f_mot --kernel_size=15 --repeats=60" --sbatch_dir sbatch/le_norm2_k15_step2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k15_f2 --loop_epochs 2 80 2 --options "--fset f_mot_morph --kernel_size=15 --repeats=60" --sbatch_dir sbatch/le_norm2_k15_step2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k15_f4 --loop_epochs 2 80 2 --options "--fset f_mot_morph_dyn_2 --kernel_size=15 --repeats=60" --sbatch_dir sbatch/le_norm2_k15_step2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+
+
+python create_sbatch.py --job_name le_norm2_k20_f1 --loop_epochs 2 50 2 --options "--fset f_mot --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_norm2_k20_step2b --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k20_f2 --loop_epochs 2 50 2 --options "--fset f_mot_morph --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_norm2_k20_step2b --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_norm2_k20_f4 --loop_epochs 2 50 2 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_norm2_k20_step2b --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_norm2_k20_step2b/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_norm2_k15_step2/*.sh); do sbatch $s; done;
