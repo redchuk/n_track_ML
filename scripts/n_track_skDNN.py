@@ -125,15 +125,30 @@ print(results.mean().mean())
 pipeline version, to avoid data leakage from scaling before splitting 
 '''
 
-model_pipe = KerasClassifier(build_fn=create_model, epochs=100, verbose=0)
-DNN_pipeline = Pipeline(
-    steps=[('scaler', StandardScaler()),
-           ('DNN', model_pipe)]
-)
-results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
-for i in range(10):  # repeated CV, since one iteration gives too unstable results
-    print('iter ' + str(i) + ' start, time:', datetime.now().strftime("%H:%M:%S"))
-    scores = cross_val_score(DNN_pipeline, X, y, cv=gkf, groups=data_raw.reset_index()['file'])
-    results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
 
-print(results.mean().mean())
+def train_dnn(iters):
+    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
+    model_pipe = KerasClassifier(build_fn=create_model, epochs=100, verbose=0)
+    DNN_pipeline = Pipeline(
+        steps=[('scaler', StandardScaler()),
+               ('DNN', model_pipe)]
+    )
+    results = pd.DataFrame(columns=['spl1', 'spl2', 'spl3', 'spl4'])
+    for i in range(iters):  # repeated CV, since one iteration gives too unstable results
+        print('iter ' + str(i) + ' start, time:', datetime.now().strftime("%H:%M:%S"))
+        scores = cross_val_score(DNN_pipeline, Xsp, y, cv=gkf, groups=data_raw.reset_index()['file'])
+        results = results.append(pd.Series(scores, index=results.columns), ignore_index=True)
+
+    print(results.mean().mean())
+    return results.mean().mean()
+
+'''
+feature knockout to estimate feature importances for DNN
+'''
+knocks = {}
+for feature in X.columns:
+    Xsp = X
+    Xsp[feature] = 0
+    print(feature)
+    knocks[feature] = train_dnn(10)
+
