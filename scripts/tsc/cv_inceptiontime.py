@@ -215,12 +215,12 @@ def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_
         logger.info("loop feature sets")
 
         for f in fsets.keys():
-            scores = inceptiontime_cv_repeat(data, output_it, f, epochs=epochs, repeats=repeats)
+            scores = inceptiontime_cv_repeat(data, output_it, f, kernel_size=kernel_size, epochs=epochs, repeats=repeats)
             scores_all.append(scores)
 
     else:
         logger.info("single fset")
-        scores = inceptiontime_cv_repeat(data, output_it, fset, epochs=epochs, repeats=repeats)
+        scores = inceptiontime_cv_repeat(data, output_it, fset, kernel_size=kernel_size, epochs=epochs, repeats=repeats)
         scores_all.append(scores)
         
     toc = time.perf_counter()

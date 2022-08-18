@@ -60,3 +60,47 @@ conda activate jinja2
 python create_sbatch.py --job_name le_k15_f1 --loop_epochs 1200 1800 10 --options "--fset f_mot --kernel_size=15 --repeats=20" --sbatch_dir sbatch/le_k15_f1/3 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
 
 for s in $(ls sbatch/le_k15_f1/3/*.sh); do sbatch $s; done;
+
+
+
+#
+# 20220505
+#
+
+source ~/.bashrc
+conda activate jinja2
+
+# test some kernel_size values
+python create_sbatch.py --job_name k20_f1 --options "--fset f_mot --kernel_size=20 --epochs=1250 --repeats=20" --sbatch_dir sbatch/k20 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+python create_sbatch.py --job_name k20_f2 --options "--fset f_mot_morph --kernel_size=20 --epochs=1000 --repeats=20" --sbatch_dir sbatch/k20 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+python create_sbatch.py --job_name k20_f3 --options "--fset f_mot_morph_dyn --kernel_size=20 --epochs=200 --repeats=20" --sbatch_dir sbatch/k20 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+
+python create_sbatch.py --job_name k15_f1 --options "--fset f_mot --kernel_size=15 --epochs=1250 --repeats=20" --sbatch_dir sbatch/k15 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+python create_sbatch.py --job_name k15_f2 --options "--fset f_mot_morph --kernel_size=15 --epochs=1000 --repeats=20" --sbatch_dir sbatch/k15 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+python create_sbatch.py --job_name k15_f3 --options "--fset f_mot_morph_dyn --kernel_size=15 --epochs=200 --repeats=20" --sbatch_dir sbatch/k15 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+
+python create_sbatch.py --job_name k25_f1 --options "--fset f_mot --kernel_size=25 --epochs=1250 --repeats=20" --sbatch_dir sbatch/k25 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+python create_sbatch.py --job_name k25_f2 --options "--fset f_mot_morph --kernel_size=25 --epochs=1000 --repeats=20" --sbatch_dir sbatch/k25 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+python create_sbatch.py --job_name k25_f3 --options "--fset f_mot_morph_dyn --kernel_size=25 --epochs=200 --repeats=20" --sbatch_dir sbatch/k25 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+
+python create_sbatch.py --job_name k30_f1 --options "--fset f_mot --kernel_size=30 --epochs=1250 --repeats=20" --sbatch_dir sbatch/k30 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+python create_sbatch.py --job_name k30_f2 --options "--fset f_mot_morph --kernel_size=30 --epochs=1000 --repeats=20" --sbatch_dir sbatch/k30 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+sleep 61
+python create_sbatch.py --job_name k30_f3 --options "--fset f_mot_morph_dyn --kernel_size=30 --epochs=200 --repeats=20" --sbatch_dir sbatch/k30 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+conda deactivate
+conda deactivate
+for s in $(ls sbatch/k20/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/k15/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/k25/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/k30/*.sh); do sbatch $s; done;
