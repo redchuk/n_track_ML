@@ -142,6 +142,7 @@ def train_dnn(iters):
     print(results.mean().mean())
     return results.mean().mean()
 
+
 '''
 feature knockout to estimate feature importances for DNN
 '''
@@ -152,3 +153,45 @@ for feature in X.columns:
     print(feature)
     knocks[feature] = train_dnn(30)
 
+# subsets of features to ko redundant
+
+speed = ['f_mean_diff_xy_micron',
+         'f_max_diff_xy_micron',
+         'f_var_diff_xy_micron',
+         'f_Rvar_diff_xy_micron',
+         ]
+
+morphology = ['f_area_micron',
+              'f_perimeter_au_norm',
+              'f_slope_area_micron',
+              'f_slope_perimeter_au_norm',
+              ]
+
+mindist = ['f_min_dist_micron',
+           'f_var_dist_micron',
+           'f_Rvar_dist_micron',
+           'f_min_dist_range',
+           'f_total_min_dist',
+           'f_slope_min_dist_micron',
+           ]
+
+persistence = ['f_total_displacement',
+               'f_persistence',
+               'f_outliers2SD_diff_xy',
+               'f_outliers3SD_diff_xy',
+               ]
+
+homologs = ['f_fastest_mask',
+            'f_most_central_mask',
+            ]
+
+gr_list = [speed, morphology, mindist, persistence, homologs]
+
+gr_knocks = {}
+for gr in gr_list:
+    Xsp = X.copy()
+    Xsp[gr] = 0
+    print(str(gr))
+    gr_knocks[str(gr)] = train_dnn(30)
+
+# todo: do same KO wiht learning curve n_track_DNN
