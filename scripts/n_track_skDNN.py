@@ -147,8 +147,8 @@ feature knockout to estimate feature importances for DNN
 '''
 knocks = {}
 for feature in X.columns:
-    Xsp = X
+    Xsp = X.copy
     Xsp[feature] = 0
     print(feature)
-    knocks[feature] = train_dnn(10)
+    knocks[feature] = train_dnn(30)
 
