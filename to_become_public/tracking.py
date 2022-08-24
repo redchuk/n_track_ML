@@ -36,6 +36,32 @@ def edge(binary):
     binary[inside] = False
     return binary
 
+
+def regis(chrom, lamin, fast=False):
+    for t in range(chrom.shape[0]):
+        ch = chrom[t]
+        ch[np.invert(binary(lamin[t]))] = 0
+
+    ch_mask = np.copy(chrom)
+    for i in range(chrom.shape[0]):
+        ch_mask[i] = (ch_mask[i] > 0)
+
+    if fast == False:
+        sr = StackReg(StackReg.RIGID_BODY)
+        transformations = sr.register_stack(lamin, reference='previous')
+        chrom = sr.transform_stack(chrom)
+        ch_mask = sr.transform_stack(ch_mask)
+        ch_mask = (ch_mask > 0.5)  # kludge
+    else:
+        pass
+
+    ch_edges = np.copy(ch_mask)
+    for k in range(ch_edges.shape[0]):
+        ch_edges[k] = edge(ch_edges[k])
+
+    return chrom, ch_mask, ch_edges
+
+
 # todo: test below to be removed, or make bash script from it?
 tstlst = glob.glob(inp_path, recursive=True)
 print(tstlst)
@@ -49,3 +75,5 @@ chrom = rescale_intensity(tiff[:,0,0,:,:])
 lamin = rescale_intensity(tiff[:,0,1,:,:])
 #plt.imshow(chrom[0,:,:])
 #plt.imshow(lamin[0,:,:])
+
+chrom_r, masks, edges = regis(chrom, lamin, fast = False)
