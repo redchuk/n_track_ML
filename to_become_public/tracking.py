@@ -62,6 +62,15 @@ def regis(chrom, lamin, fast=False):
     return chrom, ch_mask, ch_edges
 
 
+def find_dots_TL(stack, minmass=100000, diameter=11, search_range=20, memory=3, threshold=20):
+    tp.quiet()
+    f = tp.batch(stack, diameter=diameter, minmass=minmass)
+    #todo: can it be just 'parameter' instead of 'parameter = parameter'?
+    t = tp.link(f, search_range, memory=memory)
+    t1 = tp.filter_stubs(t, threshold)
+    return t1
+
+
 # todo: test below to be removed, or make bash script from it?
 tstlst = glob.glob(inp_path, recursive=True)
 print(tstlst)
@@ -77,3 +86,4 @@ lamin = rescale_intensity(tiff[:,0,1,:,:])
 #plt.imshow(lamin[0,:,:])
 
 chrom_r, masks, edges = regis(chrom, lamin, fast = False)
+data = find_dots_TL(chrom_r)
