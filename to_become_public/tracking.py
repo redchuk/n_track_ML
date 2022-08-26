@@ -71,6 +71,42 @@ def find_dots_TL(stack, minmass=100000, diameter=11, search_range=20, memory=3, 
     return t1
 
 
+def min_dist_TL(df, edges_stack):
+
+    coord_x = np.asarray([i for i in range(edges_stack[0].shape[1])])
+    coord_y = np.asarray([i for i in range(edges_stack[0].shape[0])])
+
+    xarr = np.zeros((edges_stack[0].shape))
+    xarr[:, :] = coord_x
+    yarr = np.zeros((edges_stack[0].shape)).T
+    yarr[:, :] = coord_y
+
+    arr = np.sqrt((xarr - df['x']) ** 2 + (yarr.T - df['y']) ** 2)
+    df['min_dist_pxs'] = arr[edges_stack[int(df['frame'])]].min()
+    return df
+
+
+def analyse_data(dots_df, nucl_masks, nucl_edges, pxsize):
+
+    dots_df['y_micron'] = dots_df['y'] * pxsize
+    dots_df['x_micron'] = dots_df['x'] * pxsize
+
+    areas = np.sum(nucl_masks, axis=(1, 2)) * pxsize ** 2
+    perimeters = np.sum(nucl_edges, axis=(1, 2))
+    dots_df['area_micron'] = areas[dots_df['frame']]
+    dots_df['perimeter_au'] = perimeters[dots_df['frame']]
+    dots_df['perimeter_au_norm'] = dots_df['perimeter_au'] * pxsize ** 2
+
+    data_dist = dots_df.apply(min_dist_TL, axis=1, edges_stack=nucl_edges)
+    data_dist['min_dist_micron'] = data_dist['min_dist_pxs'] * pxsize
+    data_dist['script_version_git'] = get_git_hash()
+    data_dist['guide'] = ''
+    data_dist['time'] = ''
+    data_dist['serum_conc_percent'] = ''
+    data_dist['comment_long'] = ''
+    data_dist['comment'] = ''
+    return data_dist
+
 # todo: test below to be removed, or make bash script from it?
 tstlst = glob.glob(inp_path, recursive=True)
 print(tstlst)
@@ -87,3 +123,6 @@ lamin = rescale_intensity(tiff[:,0,1,:,:])
 
 chrom_r, masks, edges = regis(chrom, lamin, fast = False)
 data = find_dots_TL(chrom_r)
+#tp.annotate(data.iloc[:4], chrom_r[0,:,:])
+
+add_data = analyse_data(data, masks, edges, xy_pxsize)
