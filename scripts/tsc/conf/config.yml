@@ -10,6 +10,6 @@ rocket:
   repeats: 20
 
 output:
-  csv: "cv_sktime_20220401.csv"
+  csv: "cv_sktime_20220510.csv"
 
 

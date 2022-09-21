@@ -32,7 +32,7 @@ which python
 echo "Starting..."
 date
 
-PROG="/proj/hajaalin/Projects/n_track_ML/scripts/tsc/cv_inceptiontime.py"
+PROG="{{ prog }}"
 PATHS="{{ paths }}"
 OPTIONS="{{ options }} --job_name={{ job_name }} --job_id=$SLURM_JOBID"
 
@@ -52,12 +52,13 @@ date
 @click.option("--cluster", type=click.Choice(['ukko','kale']), default="ukko")
 @click.option("--partition", type=str, default="gpu,gpu-oversub")
 @click.option("--time", type=str, default="4:00:00")
+@click.option("--prog", type=str, default="cv_inceptiontime.py")
 @click.option("--paths", type=str, default="paths.yml")
 @click.option("--options", type=str, default="'--epochs=100 --kernel_size=15 --repeats=20'")
 @click.option("--sbatch_dir", type=str, default="./sbatch")
 @click.option("--loop_epochs", type=(int,int,int))
 
-def create_sbatch(job_name, job_dir, cluster, partition, time, paths, options, sbatch_dir, loop_epochs):
+def create_sbatch(job_name, job_dir, cluster, partition, time, prog, paths, options, sbatch_dir, loop_epochs):
     job_dir = Path(job_dir) / job_name
     job_dir.mkdir(exist_ok=True, parents=True)
         
@@ -66,6 +67,7 @@ def create_sbatch(job_name, job_dir, cluster, partition, time, paths, options, s
               'cluster': cluster, \
               'partition': partition, \
               'time': time, \
+              'prog': prog, \
               'paths': paths, \
               'options': options, \
     }

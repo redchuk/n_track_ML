@@ -2,10 +2,15 @@ import keras
 from pathlib import Path
 import numpy as np
 import sklearn
+from scikeras.wrappers import KerasClassifier, KerasRegressor
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import StratifiedGroupKFold
+from sklearn.model_selection import cross_val_score
 
-from utility import parse_config
+from cv_inceptiontime import get_standard_scaling, apply_standard_scaling
 from etl_tsc import load_data, get_X_dfX_y_groups, fsets
+from laxcat import Classifier_LAXCAT
+from utility import parse_config
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,7 +29,7 @@ def prepare_data_for_inception(X,y):
     # make the min to zero of labels
     #y_train, y_test = transform_labels(y_train, y_test)
 
-    # save orignal y because later we will use binary
+    # save original y because later we will use binary
     y_true_train = y_train.astype(np.int64)
     # transform the labels from integers to one hot vectors
     enc = sklearn.preprocessing.OneHotEncoder()
@@ -38,86 +43,36 @@ def prepare_data_for_inception(X,y):
     return x_train, y_train, nb_classes, y_true_train, enc
 
 
-from scikeras.wrappers import KerasClassifier, KerasRegressor
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from sklearn.model_selection import GroupKFold
-from sklearn.model_selection import cross_val_score
 
 
-def standard_scale_x_by_series(_X):
-    scaled = np.ndarray(_X.shape)
-
-    # loop over samples
-    for i in range(_X.shape[0]):
-        # loop over features
-        for j in range(_X.shape[1]):
-            # calculate mean and std for the time series
-            u = np.mean(_X[i][j])
-            s = np.std(_X[i][j])
-            # scale the time series
-            scaled[i][j] = (_X[i][j] - u) / s
-            #print(np.mean(scaled[i][j]))
-            #print(np.std(scaled[i][j]))
-
-    return scaled
-
-
-def get_standard_scaling(X):
-    logger.debug("get_standard_scaling")
-    logger.debug(X.shape)
-    # X dimensions:
-    # i: samples, ~200 series
-    # j: features, ~3-10 features
-    # k: the time series, ~30 steps
-    mean = np.mean(X,axis=(0,2))
-    std = np.std(X, axis=(0,2))
-
-    logger.debug(mean.shape)
-    logger.debug(std.shape)
-    
-    return mean,std
-
-def apply_standard_scaling(X,mean,std):
-    logger.debug("apply_standard_scaling")
-    logger.debug(X.shape)
-    # X dimensions:
-    # i: samples, ~200 series
-    # j: features, ~3-10 features
-    # k: the time series, ~30 steps
-
-    # transpose X so that features are on the trailing index
-    Xt = np.transpose(X,(0,2,1))
-    logger.debug(Xt.shape)
-
-    # transpose mean and std so that features are on the trailing index
-    mean = np.transpose(mean)
-    std = np.transpose(std)
-    logger.debug(mean.shape)
-    logger.debug(std.shape)
-    # trust numpy broadcasting
-    Xt = Xt - mean
-    Xt = Xt / std
-
-    Xt = np.transpose(Xt,(0,2,1))
-    logger.debug(Xt.shape)
-
-    return Xt
     
 
 '''
 Single cross-validation run
 '''
-def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
-                     kernel_size, epochs=250, nb_classes=2):
+def cv_single_run(classifier_name, params, \
+                  cv, X_inc, y_inc, y_true, groups, output_it, \
+                  epochs=250, nclasses=2):
     output_directory = output_it
     input_shape = X_inc.shape[1:]
     verbose = False
 
-    from classifiers import inception
+    # this import is done here after __main__ has added src directory to path
     classifier_keras = None
-    classifier_keras = inception.Classifier_INCEPTION(output_directory, input_shape, nb_classes, \
-                                                      kernel_size=kernel_size, nb_epochs=epochs, \
-                                                      verbose=verbose)
+
+    if classifier_name == 'InceptionTime':
+        from classifiers import inception
+
+        kernel_size = params['kernel_size']
+        classifier_keras = inception.Classifier_INCEPTION(output_directory, \
+                                                          input_shape, \
+                                                          nclasses, \
+                                                          kernel_size=kernel_size, \
+                                                          nb_epochs=epochs, \
+                                                          verbose=verbose)
+    elif classifier_name == 'LAXCAT':
+        classifier_keras = Classifier_LAXCAT(params, input_shape)
+        
     def create_model():
         #print(classifier_keras.model)
         #classifier_keras.model.summary()
@@ -151,7 +106,7 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         logger.debug("std:")
         logger.debug(std)
         X_train_scaled = apply_standard_scaling(X_inc[train_index],mean,std)
-        #print(X_train_scaled.shape)
+        print(X_train_scaled.shape)
         #logger.debug("scaled2")
         #logger.debug(X_train_scaled)
         
@@ -183,9 +138,6 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         fold_f1 = f1_score(truth, pred)
         scores.loc[len(scores)] = [fold_acc,fold_prc,fold_rec,fold_f1]
     
-    scores['classifier'] = 'InceptionTime'
-    scores['kernel_size'] = kernel_size
-    scores['epochs'] = epochs
 
     return scores
 
@@ -193,12 +145,13 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
 '''
 Repeat cross-validation
 '''
-def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10,job_id=''):
+def cv_repeat(classifier_name, params, data, output_it, fset, \
+              epochs=250, repeats=10, job_id=''):
     logger.info(fset)
     X, dfX, y, groups, debugm, debugn = get_X_dfX_y_groups(data, fset)
 
     # prepare_data_for inception returns all, no split to train and test sets
-    X_inc, y_inc, nb_classes, y_true, enc = prepare_data_for_inception(X,y)
+    X_inc, y_inc, nclasses, y_true, enc = prepare_data_for_inception(X,y)
 
     logger.debug("X_inc: " + str(X_inc.shape))
     logger.debug("y_inc: " + str(y_inc.shape))
@@ -208,20 +161,22 @@ def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, r
     scores_all = []
     for i in range(repeats):
         logger.debug('repeat: %d/%d' % (i+1, repeats))
-        scores = inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
-                                  kernel_size=kernel_size, epochs=epochs, \
-                                  nb_classes=nb_classes)
+        scores = cv_single_run(classifier_name, params, \
+                               cv, X_inc, y_inc, y_true, groups, output_it, \
+                               epochs=epochs, nclasses=nclasses)
         scores['repeat'] = i+1
         scores_all.append(scores)
     scores = pd.concat(scores_all)
 
+    scores['classifier'] = classifier_name
+    for p in params.keys():
+        scores[p] = params[p]
     scores['cv'] = str(cv)
     scores['fset'] = fset
-    scores['kernel_size'] = kernel_size
     scores['epochs'] = epochs
     scores['job_id'] = job_id
 
-    logger.info(f"inceptiontime_cv_repeat: %s feature_set:%s, kernel_size:%d, epochs:%d, accuracy:%f0.00" % (str(cv), fset, kernel_size, epochs, scores['accuracy'].mean()))
+    logger.info(f"inceptiontime_cv_repeat: %s feature_set:%s, params:%d, epochs:%d, accuracy:%f0.00" % (str(cv), fset, str(params), epochs, scores['accuracy'].mean()))
     
     return scores
 
@@ -235,14 +190,15 @@ import time
 @click.command()
 @click.option("--paths", type=str, default="paths.yml")
 @click.option("--kernel_size", type=int, default=20)
+@click.option("--nfilters", type=int, default=32)
 @click.option("--epochs", type=int, default=100)
 @click.option("--fset", type=click.Choice(["f_mot","f_mot_morph","f_mot_morph_dyn", "f_mot_morph_dyn_2"]), default="f_mot_morph")
 @click.option("--loop_fsets", is_flag=True, default=False)
 @click.option("--repeats", type=int, default=20)
-@click.option("--job_name", type=str, default="tsc_it")
+@click.option("--job_name", type=str, default="cv_laxcat")
 @click.option("--job_id", type=str)
 @click.option("--now", type=str)
-def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_name, job_id, now):
+def cv_laxcat(paths, kernel_size, nfilters, epochs, fset, loop_fsets, repeats, job_name, job_id, now):
     paths = parse_config(paths)
 
     log_dir = Path(paths["log"]["tsc"]) / job_name / now
@@ -278,11 +234,13 @@ def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_
     # read the data 
     data_dir = paths["data"]["dir"]
     raw_data_file = paths["data"]["raw_data_file"]
-
     data = load_data(Path(data_dir) / raw_data_file)
     logger.info('Loaded data shape: ' + str(data.shape))
 
 
+    # model parameters
+    params = {'kernel_size':kernel_size, 'nfilters':nfilters}
+    
     tic = time.perf_counter()
     
     scores_all = []
@@ -291,12 +249,16 @@ def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_
         logger.info("loop feature sets")
 
         for f in fsets.keys():
-            scores = inceptiontime_cv_repeat(data, output_it, f, kernel_size=kernel_size, epochs=epochs, repeats=repeats, job_id=job_id)
+            scores = cv_repeat("LAXCAT", params, \
+                               data, output_it, f, epochs=epochs, repeats=repeats, \
+                               job_id=job_id)
             scores_all.append(scores)
 
     else:
         logger.info("single fset")
-        scores = inceptiontime_cv_repeat(data, output_it, fset, kernel_size=kernel_size, epochs=epochs, repeats=repeats, job_id=job_id)
+        scores = cv_repeat("LAXCAT", params, \
+                           data, output_it, fset, epochs=epochs, repeats=repeats, \
+                           job_id=job_id)
         scores_all.append(scores)
         
     toc = time.perf_counter()
@@ -310,6 +272,6 @@ def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_
     logger.info("Wrote scores to " + str(scores_file))
 
 if __name__ == "__main__":
-    cv_inceptiontime()
+    cv_laxcat()
     
 

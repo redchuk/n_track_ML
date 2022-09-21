@@ -199,3 +199,12 @@ python create_sbatch.py --job_name le_norm2_k20_f4 --loop_epochs 2 50 2 --option
 
 for s in $(ls sbatch/le_norm2_k20_step2b/*.sh); do sbatch $s; done;
 for s in $(ls sbatch/le_norm2_k15_step2/*.sh); do sbatch $s; done;
+
+
+#
+# 20220629
+#
+
+# First test of LAXCAT
+
+python create_sbatch.py --job_name le_laxcat_1 --loop_epochs 2 500 10 --options "--fset f_mot --kernel_size=20 --nfilters=32 --repeats=30" --sbatch_dir sbatch/le_laxcat_1 --prog /proj/hajaalin/Projects/n_track_ML/scripts/tsc/cv_laxcat.py --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
