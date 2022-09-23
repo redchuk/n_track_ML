@@ -52,7 +52,7 @@ date
 @click.option("--cluster", type=click.Choice(['ukko','kale']), default="ukko")
 @click.option("--partition", type=str, default="gpu,gpu-oversub")
 @click.option("--time", type=str, default="4:00:00")
-@click.option("--prog", type=str, default="cv_inceptiontime.py")
+@click.option("--prog", type=str, default="/proj/hajaalin/Projects/n_track_ML/scripts/tsc/cv_inceptiontime.py")
 @click.option("--paths", type=str, default="paths.yml")
 @click.option("--options", type=str, default="'--epochs=100 --kernel_size=15 --repeats=20'")
 @click.option("--sbatch_dir", type=str, default="./sbatch")

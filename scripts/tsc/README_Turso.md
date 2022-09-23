@@ -40,6 +40,7 @@ source activate tsc_jupyter2
 CONDA_CUDA_OVERRIDE="11.2" mamba install tensorflow==2.7.0 cudatoolkit==11.2 keras numpy pandas pip scikit-learn scipy==1.4.1 sktime==0.10.1 pyyaml jupyterlab matplotlib -c conda-forge
 pip install scikeras
 pip install click
+pip install shap
 python -m ipykernel install --user --name tsc_jupyter2 --display-name "Python (tsc_jupyter2)"
 ```
 

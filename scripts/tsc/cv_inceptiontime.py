@@ -236,7 +236,7 @@ import time
 @click.option("--paths", type=str, default="paths.yml")
 @click.option("--kernel_size", type=int, default=20)
 @click.option("--epochs", type=int, default=100)
-@click.option("--fset", type=click.Choice(["f_mot","f_mot_morph","f_mot_morph_dyn", "f_mot_morph_dyn_2"]), default="f_mot_morph")
+@click.option("--fset", type=click.Choice(fsets.keys()), default="f_mot_morph")
 @click.option("--loop_fsets", is_flag=True, default=False)
 @click.option("--repeats", type=int, default=20)
 @click.option("--job_name", type=str, default="tsc_it")

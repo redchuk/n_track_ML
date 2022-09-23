@@ -136,6 +136,14 @@ fsets['f_mot'] = ['x','y','min_dist_pxs','serum_conc_percent','file']
 fsets['f_mot_morph'] = fsets['f_mot'] + ['area_micron','perimeter_au']
 fsets['f_mot_morph_dyn'] = fsets['f_mot'] + ['dxy','angle','dangle','darea','dperimeter']
 fsets['f_mot_morph_dyn_2'] = fsets['f_mot_morph'] + ['dxy','angle','dangle','darea','dperimeter']
+fsets['f_x'] = ['x','serum_conc_percent','file']
+fsets['f_y'] = ['y','serum_conc_percent','file']
+fsets['f_xy'] = ['x','y','serum_conc_percent','file']
+fsets['f_mindist'] = ['min_dist_pxs','serum_conc_percent','file']
+fsets['f_morph'] = ['area_micron', 'perimeter_au','serum_conc_percent','file']
+fsets['f_area'] = ['area_micron','serum_conc_percent','file']
+fsets['f_perim'] = ['perimeter_au','serum_conc_percent','file']
+
 
 #print(fsets['f_mot_morph_dyn'])
 
@@ -169,6 +177,7 @@ def get_X_dfX_y_groups(data, f_set_name):
     # read group name from the last element of the series
     # index of first element might be 0,1 or 2, depending on how many elements
     # have been dropped because of adding features with df.diff()
+    print(datan.columns)
     groups = datan['file'].apply(lambda x: x.iloc[-1])
     datan = datan.drop(columns=['file'])
     

@@ -208,3 +208,35 @@ for s in $(ls sbatch/le_norm2_k15_step2/*.sh); do sbatch $s; done;
 # First test of LAXCAT
 
 python create_sbatch.py --job_name le_laxcat_1 --loop_epochs 2 500 10 --options "--fset f_mot --kernel_size=20 --nfilters=32 --repeats=30" --sbatch_dir sbatch/le_laxcat_1 --prog /proj/hajaalin/Projects/n_track_ML/scripts/tsc/cv_laxcat.py --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+
+#
+# 20220922
+#
+
+# try and see what happens with less features
+
+python create_sbatch.py --job_name le_k20_fset_x --loop_epochs 2 80 2 --options "--fset f_x --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_x --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_k20_fset_y --loop_epochs 2 80 2 --options "--fset f_y --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_y --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_k20_fset_xy --loop_epochs 2 80 2 --options "--fset f_xy --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_xy --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_k20_fset_morph --loop_epochs 2 80 2 --options "--fset f_morph --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_morph --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_k20_fset_area --loop_epochs 2 80 2 --options "--fset f_area --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_area --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_k20_fset_perim --loop_epochs 2 80 2 --options "--fset f_perim --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_perim --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+
+
+for s in $(ls sbatch/le_k20_fset_x/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_fset_y/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_fset_xy/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_fset_morph/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_fset_area/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_fset_perim/*.sh); do sbatch $s; done;
+
+python create_sbatch.py --job_name le_k20_fset_mindist --loop_epochs 2 80 2 --options "--fset f_mindist --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_mindist --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_k20_fset_mindist/*.sh); do sbatch $s; done;
