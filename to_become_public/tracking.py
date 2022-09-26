@@ -14,7 +14,7 @@ import pandas as pd
 import subprocess
 
 inp_path = '**/*.tif'  # todo: fix path
-out_path = '../tracking_output/'  # todo: fix path
+out_path = 'to_become_public/tracking_output/'
 
 
 def get_git_hash():
@@ -100,11 +100,7 @@ def analyse_data(dots_df, nucl_masks, nucl_edges, pxsize):
     data_dist = dots_df.apply(min_dist_TL, axis=1, edges_stack=nucl_edges)
     data_dist['min_dist_micron'] = data_dist['min_dist_pxs'] * pxsize
     data_dist['script_version_git'] = get_git_hash()
-    data_dist['guide'] = ''
-    data_dist['time'] = ''
     data_dist['serum_conc_percent'] = ''
-    data_dist['comment_long'] = ''
-    data_dist['comment'] = ''
     return data_dist
 
 # todo: test below to be removed, or make bash script from it? main method?
@@ -127,3 +123,5 @@ data = find_dots_TL(chrom_r)
 #tp.annotate(data.iloc[:4], chrom_r[0,:,:])
 
 add_data = analyse_data(data, masks, edges, xy_pxsize)
+add_data.to_csv(out_path + filename.split('.tif')[0] + ".csv")
+# serum_concentr from filename?
