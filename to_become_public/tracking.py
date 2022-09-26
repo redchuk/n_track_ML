@@ -107,7 +107,7 @@ def analyse_data(dots_df, nucl_masks, nucl_edges, pxsize):
     data_dist['comment'] = ''
     return data_dist
 
-# todo: test below to be removed, or make bash script from it?
+# todo: test below to be removed, or make bash script from it? main method?
 tstlst = glob.glob(inp_path, recursive=True)
 print(tstlst)
 filename = str(tstlst[1]).split('\\')[-1]
@@ -115,6 +115,7 @@ print(filename)
 
 (tiff, meta) = ome.read_ometiff(tstlst[1])
 xy_pxsize = float((meta.split(' ')[57]).split("\"")[1])
+# todo: parse xml as Harri explained, https://www.geeksforgeeks.org/xml-parsing-python/
 
 chrom = rescale_intensity(tiff[:,0,0,:,:])
 lamin = rescale_intensity(tiff[:,0,1,:,:])
