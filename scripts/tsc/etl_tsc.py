@@ -37,23 +37,6 @@ def initial_filtering(data):
     return data
 
 
-def normalize_xy(data):
-    # add x and y mean per time series
-    data = data.join(data.groupby(['file','particle'])['x'].mean(), on=['file','particle'], rsuffix='_mean')
-    data = data.join(data.groupby(['file','particle'])['y'].mean(), on=['file','particle'], rsuffix='_mean')
-
-    # make x and y have zero mean
-    data['x_norm'] = data['x'] - data['x_mean']
-    data['y_norm'] = data['y'] - data['y_mean']
-
-    data['x_orig'] = data['x']
-    data['y_orig'] = data['y']
-
-    data['x'] = data['x_norm']
-    data['y'] = data['y_norm']
-    
-    return data
-
 
 def create_instance_index(data):
     # combine file and particle columns for using as instance index later on
@@ -151,7 +134,6 @@ fsets['f_perim'] = ['perimeter_au','serum_conc_percent','file']
 def get_X_dfX_y_groups(data, f_set_name):
     data = data.copy()
     data = initial_filtering(data)
-    data = normalize_xy(data)
     data = create_instance_index(data)
     data = add_nframes_col(data)
     debug0 = data.copy()
