@@ -1,7 +1,8 @@
 import click
 from datetime import datetime
 from jinja2 import Environment
-from pathlib import Path
+from pathlib import Path, PosixPath
+import subprocess
 
 BASH = """#!/bin/bash
 #
@@ -32,7 +33,7 @@ which python
 echo "Starting..."
 date
 
-PROG="{{ prog }}"
+PROG="{{ prog_dir }}/scripts/tsc/{{ prog }}"
 PATHS="{{ paths }}"
 OPTIONS="{{ options }} --job_name={{ job_name }} --job_id=$SLURM_JOBID"
 
@@ -44,7 +45,35 @@ echo "Done."
 date
 """
 
+def git_clone(branch):
+    tmp = PosixPath("tmp_clone")
+    repo = "git@github.com-n_track_ML:hajaalin/n_track_ML.git"
+    
+    cmd = "git clone -b %s --single-branch --depth 1 %s %s" % (branch, repo, str(tmp))
+    subprocess.run(cmd.split())
 
+    # save only the scripts directory
+    for f in (tmp / 'data').iterdir():
+        f.unlink()
+    for f in (tmp / 'notebooks').iterdir():
+        f.unlink()
+    (tmp / 'data').rmdir()
+    (tmp / 'notebooks').rmdir()
+
+    cmd = "git --git-dir ./tmp_clone/.git log -n 1 --pretty=format:'%H'"
+    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
+    commit = result.stdout.decode().replace("'","")
+    print(commit)
+
+    root = Path("/proj/hajaalin/Projects/n_track_ML/run")
+    prog_dir = root / ("n_track_ML_" + commit)
+    if not prog_dir.exists():
+        tmp.rename(prog_dir)
+    else:
+        cmd = "rm -r %s" % str(tmp)
+        subprocess.run(cmd)
+    
+    return str(prog_dir)
 
 @click.command()
 @click.option("--job_name", type=str, default="tsc-it")
@@ -52,21 +81,24 @@ date
 @click.option("--cluster", type=click.Choice(['ukko','kale']), default="ukko")
 @click.option("--partition", type=str, default="gpu,gpu-oversub")
 @click.option("--time", type=str, default="4:00:00")
-@click.option("--prog", type=str, default="/proj/hajaalin/Projects/n_track_ML/scripts/tsc/cv_inceptiontime.py")
+@click.option("--prog", type=str, default="cv_inceptiontime.py")
+@click.option("--branch", type=str)
 @click.option("--paths", type=str, default="paths.yml")
 @click.option("--options", type=str, default="'--epochs=100 --kernel_size=15 --repeats=20'")
 @click.option("--sbatch_dir", type=str, default="./sbatch")
 @click.option("--loop_epochs", type=(int,int,int))
-
-def create_sbatch(job_name, job_dir, cluster, partition, time, prog, paths, options, sbatch_dir, loop_epochs):
+def create_sbatch(job_name, job_dir, cluster, partition, time, prog, branch, paths, options, sbatch_dir, loop_epochs):
     job_dir = Path(job_dir) / job_name
     job_dir.mkdir(exist_ok=True, parents=True)
+
+    prog_dir = git_clone(branch)
         
     values = {'job_name': job_name, \
               'job_dir': str(job_dir), \
               'cluster': cluster, \
               'partition': partition, \
               'time': time, \
+              'prog_dir': prog_dir, \
               'prog': prog, \
               'paths': paths, \
               'options': options, \
