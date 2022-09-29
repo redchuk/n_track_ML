@@ -262,6 +262,7 @@ def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_
     logger.addHandler(file_handler)
     logger.info(f"Finished logger configuration!")
     print("Logging to " + str(log_file))
+    logger.info(Path(__file__).absolute())
 
 
     # add InceptionTime source to Python path

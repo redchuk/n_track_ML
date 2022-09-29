@@ -33,7 +33,7 @@ which python
 echo "Starting..."
 date
 
-PROG="{{ prog_dir }}/scripts/tsc/{{ prog }}"
+PROG="{{ prog_dir }}/{{ prog }}"
 PATHS="{{ paths }}"
 OPTIONS="{{ options }} --job_name={{ job_name }} --job_id=$SLURM_JOBID"
 
@@ -73,7 +73,7 @@ def git_clone(branch):
         cmd = "rm -r %s" % str(tmp)
         subprocess.run(cmd)
     
-    return str(prog_dir)
+    return str(prog_dir / "scripts" / "tsc")
 
 @click.command()
 @click.option("--job_name", type=str, default="tsc-it")
@@ -81,17 +81,21 @@ def git_clone(branch):
 @click.option("--cluster", type=click.Choice(['ukko','kale']), default="ukko")
 @click.option("--partition", type=str, default="gpu,gpu-oversub")
 @click.option("--time", type=str, default="4:00:00")
+@click.option("--test", is_flag=True, default=False, show_default=True)
 @click.option("--prog", type=str, default="cv_inceptiontime.py")
 @click.option("--branch", type=str)
 @click.option("--paths", type=str, default="paths.yml")
 @click.option("--options", type=str, default="'--epochs=100 --kernel_size=15 --repeats=20'")
 @click.option("--sbatch_dir", type=str, default="./sbatch")
 @click.option("--loop_epochs", type=(int,int,int))
-def create_sbatch(job_name, job_dir, cluster, partition, time, prog, branch, paths, options, sbatch_dir, loop_epochs):
+def create_sbatch(job_name, job_dir, cluster, partition, time, test, prog, branch, paths, options, sbatch_dir, loop_epochs):
     job_dir = Path(job_dir) / job_name
     job_dir.mkdir(exist_ok=True, parents=True)
 
-    prog_dir = git_clone(branch)
+    if test:
+        prog_dir = Path(__file__).parent.absolute()
+    else:
+        prog_dir = git_clone(branch)
         
     values = {'job_name': job_name, \
               'job_dir': str(job_dir), \
