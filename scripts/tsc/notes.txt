@@ -240,3 +240,57 @@ for s in $(ls sbatch/le_k20_fset_perim/*.sh); do sbatch $s; done;
 python create_sbatch.py --job_name le_k20_fset_mindist --loop_epochs 2 80 2 --options "--fset f_mindist --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_mindist --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
 
 for s in $(ls sbatch/le_k20_fset_mindist/*.sh); do sbatch $s; done;
+
+
+##
+## 2022-09-28
+##
+
+# SHAP
+
+python create_sbatch.py --job_name SHAP_k20_f_xy --options "--fset f_xy --kernel_size=20 --epochs=50 --repeats=30" --sbatch_dir sbatch/SHAP --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+
+## normalization recheck!
+python create_sbatch.py --job_name le_k20_fset_xy_normcheck --loop_epochs 2 80 2 --options "--fset f_xy --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_xy_normcheck --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+python create_sbatch.py --job_name le_k20_fset_mot_normcheck --loop_epochs 2 80 2 --options "--fset f_mot --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_mot_normcheck --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+python create_sbatch.py --job_name le_k20_fset_mot_morph_normcheck --loop_epochs 2 80 2 --options "--fset f_mot_morph --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_mot_morph_normcheck --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+python create_sbatch.py --job_name le_k20_fset_mot_morph_dyn_2_normcheck --loop_epochs 2 80 2 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_mot_morph_dyn_2_normcheck --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+
+
+for s in $(ls sbatch/le_k20_fset_mot_normcheck/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_fset_mot_morph_normcheck/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_fset_mot_morph_dyn_2_normcheck/*.sh); do sbatch $s; done;
+
+# more epochs for f_mot_morph_dyn_2, our best shot at the moment
+python create_sbatch.py --job_name le_k20_fset_mot_morph_dyn_2_normcheck --loop_epochs 80 250 10 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_mot_morph_dyn_2_normcheck2 --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_k20_fset_mot_morph_dyn_2_normcheck2/*.sh); do sbatch $s; done;
+
+
+# test cloning run code from github
+python create_sbatch.py --job_name le_k20_fset_mot_morph_dyn_2_normcheck --loop_epochs 80 250 10 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=30" --sbatch_dir sbatch/git_test --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+
+##
+## 2022-09-29
+##
+
+# added --test flag to run from current folder
+# without the flag, clone the branch from github
+python create_sbatch.py --branch laxcat --job_name git_test --loop_epochs 2 6 2 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=2" --sbatch_dir sbatch/git_test2 --test --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/git_test2/*.sh); do sbatch $s; done;
+# git commit...
+# git push origin...
+
+job="le_k20"
+fset="f_mot_morph_dyn_2"
+ts="20220929"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --branch laxcat --job_name $job_name --loop_epochs 2 80 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_k20_f_mot_morph_dyn_2_20220929/*.sh); do sbatch $s; done;
