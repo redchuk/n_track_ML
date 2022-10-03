@@ -46,7 +46,8 @@ date
 """
 
 def git_clone(branch):
-    tmp = PosixPath("tmp_clone")
+    tmpstr = "tmp_clone_" + datetime.now().strftime("%H%M%S%f")
+    tmp = PosixPath(tmpstr)
     repo = "git@github.com-n_track_ML:hajaalin/n_track_ML.git"
     
     cmd = "git clone -b %s --single-branch --depth 1 %s %s" % (branch, repo, str(tmp))
@@ -60,7 +61,7 @@ def git_clone(branch):
     (tmp / 'data').rmdir()
     (tmp / 'notebooks').rmdir()
 
-    cmd = "git --git-dir ./tmp_clone/.git log -n 1 --pretty=format:'%H'"
+    cmd = "git --git-dir ./" + tmpstr + "/.git log -n 1 --pretty=format:'%H'"
     result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
     commit = result.stdout.decode().replace("'","")
     print(commit)
@@ -69,9 +70,9 @@ def git_clone(branch):
     prog_dir = root / ("n_track_ML_" + commit)
     if not prog_dir.exists():
         tmp.rename(prog_dir)
-    else:
-        cmd = "rm -r %s" % str(tmp)
-        subprocess.run(cmd)
+    #else:
+    #    cmd = "rm -rf %s" % str(Path(__file__).parent.absolute() / tmpstr)
+    #    subprocess.run(cmd)
     
     return str(prog_dir / "scripts" / "tsc")
 

@@ -294,3 +294,43 @@ echo $job_name
 python create_sbatch.py --branch laxcat --job_name $job_name --loop_epochs 2 80 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
 
 for s in $(ls sbatch/le_k20_f_mot_morph_dyn_2_20220929/*.sh); do sbatch $s; done;
+
+
+##
+## 20221003
+##
+
+# test without x and y
+
+job="le_k20"
+fset="f_dxy"
+ts="20221003"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --branch laxcat --job_name $job_name --loop_epochs 2 80 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+job="le_k20"
+fset="f_dxy_angle"
+ts="20221003"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --branch laxcat --job_name $job_name --loop_epochs 2 80 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+job="le_k20"
+fset="f_dxy_angle_morph"
+ts="20221003"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --branch laxcat --job_name $job_name --loop_epochs 2 80 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+job="le_k20"
+fset="f_dxy_angle_morphd"
+ts="20221003"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --branch laxcat --job_name $job_name --loop_epochs 2 80 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/le_k20_f_dxy_20221003/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_f_dxy_angle_20221003/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_f_dxy_angle_morph_20221003/*.sh); do sbatch $s; done;
+for s in $(ls sbatch/le_k20_f_dxy_angle_morphd_20221003/*.sh); do sbatch $s; done;
