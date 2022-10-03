@@ -140,6 +140,7 @@ fsets['f_dxy_mindist_angle_morph'] = fsets['f_dxy_mindist_angle'] + ['area_micro
 
 # try also without perimeter (might be redundant with area)"
 fsets['f_dxy_angle_area'] = fsets['f_dxy_angle'] + ['area_micron']
+fsets['f_dxy_mindist_angle_area'] = fsets['f_dxy_mindist_angle'] + ['area_micron']
 
 #print(fsets['f_mot_morph_dyn'])
 
