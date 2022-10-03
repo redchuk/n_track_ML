@@ -133,6 +133,14 @@ fsets['f_dxy_angle'] = fsets['f_dxy'] + ['angle','dangle']
 fsets['f_dxy_angle_morph'] = fsets['f_dxy_angle'] + ['area_micron','perimeter_au']
 fsets['f_dxy_angle_morphd'] = fsets['f_dxy_angle_morph'] + ['darea','dperimeter']
 
+# forgot mindist...
+fsets['f_dxy_mindist'] = fsets['f_dxy'] + ['min_dist_pxs']
+fsets['f_dxy_mindist_angle'] = fsets['f_dxy_mindist'] + ['angle','dangle']
+fsets['f_dxy_mindist_angle_morph'] = fsets['f_dxy_mindist_angle'] + ['area_micron','perimeter_au']
+
+# try also without perimeter (might be redundant with area)"
+fsets['f_dxy_angle_area'] = fsets['f_dxy_angle'] + ['area_micron']
+
 #print(fsets['f_mot_morph_dyn'])
 
 
