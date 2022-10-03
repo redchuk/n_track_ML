@@ -1,8 +1,12 @@
 import keras
 from pathlib import Path
 import numpy as np
+import shap
 import sklearn
 from sklearn.model_selection import StratifiedGroupKFold
+#import tensorflow as tf
+# https://stackoverflow.com/questions/66814523/shap-deepexplainer-with-tensorflow-2-4-error
+#tf.compat.v1.disable_v2_behavior() 
 
 from utility import parse_config
 from etl_tsc import load_data, get_X_dfX_y_groups, fsets
@@ -127,6 +131,9 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
     columns = ['accuracy','precision','recall','f1']
     scores = pd.DataFrame(columns=columns)
 
+    shap_vs_list = []
+    sX_test_list = []
+
     # One-hot encoding is a problem for StratifiedGroupKFold,
     # split using y_true
     for train_index,val_index in cv.split(X_inc,y_true,groups):
@@ -154,7 +161,7 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         #print(X_train_scaled.shape)
         #logger.debug("scaled2")
         #logger.debug(X_train_scaled)
-        
+       
         classifier = KerasClassifier(model=create_model, \
                                      epochs=epochs, \
                                      batch_size=batch_size, \
@@ -167,6 +174,8 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         pred = classifier.predict(X_val_scaled)
 
         truth = y_true[val_index]
+
+        sX_test_list.append(X_val_scaled)
         #print('truth')
         #print(truth)
         #print('pred')
@@ -182,6 +191,14 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         fold_rec = recall_score(truth, pred)
         fold_f1 = f1_score(truth, pred)
         scores.loc[len(scores)] = [fold_acc,fold_prc,fold_rec,fold_f1]
+
+        # SHAP
+        #explainer = shap.DeepExplainer((classifier.model_.layers[0].input, classifier.model_.layers[-1].output), X_train_scaled)
+        #shap_values = explainer.shap_values(X_val_scaled)
+        explainer = shap.GradientExplainer(classifier.model_, X_train_scaled)
+        shap_values = explainer.shap_values(X_val_scaled)
+        shap_vs_list.append(shap_values)
+        
     
     scores['classifier'] = 'InceptionTime'
     scores['kernel_size'] = kernel_size

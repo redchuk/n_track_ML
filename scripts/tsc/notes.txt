@@ -254,11 +254,11 @@ python create_sbatch.py --job_name SHAP_k20_f_xy --options "--fset f_xy --kernel
 ## normalization recheck!
 python create_sbatch.py --job_name le_k20_fset_xy_normcheck --loop_epochs 2 80 2 --options "--fset f_xy --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_xy_normcheck --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
 
+for s in $(ls sbatch/le_k20_fset_xy_normcheck/*.sh); do sbatch $s; done;
+
 python create_sbatch.py --job_name le_k20_fset_mot_normcheck --loop_epochs 2 80 2 --options "--fset f_mot --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_mot_normcheck --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
 python create_sbatch.py --job_name le_k20_fset_mot_morph_normcheck --loop_epochs 2 80 2 --options "--fset f_mot_morph --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_mot_morph_normcheck --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
 python create_sbatch.py --job_name le_k20_fset_mot_morph_dyn_2_normcheck --loop_epochs 2 80 2 --options "--fset f_mot_morph_dyn_2 --kernel_size=20 --repeats=30" --sbatch_dir sbatch/le_k20_fset_mot_morph_dyn_2_normcheck --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
-
-
 
 for s in $(ls sbatch/le_k20_fset_mot_normcheck/*.sh); do sbatch $s; done;
 for s in $(ls sbatch/le_k20_fset_mot_morph_normcheck/*.sh); do sbatch $s; done;
@@ -294,3 +294,4 @@ echo $job_name
 python create_sbatch.py --branch laxcat --job_name $job_name --loop_epochs 2 80 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
 
 for s in $(ls sbatch/le_k20_f_mot_morph_dyn_2_20220929/*.sh); do sbatch $s; done;
+

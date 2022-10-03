@@ -44,6 +44,13 @@ pip install shap
 python -m ipykernel install --user --name tsc_jupyter2 --display-name "Python (tsc_jupyter2)"
 ```
 
+Copy of main environment, add SHAP.
+```bash
+mamba create --clone tsc --name tsc_shap
+conda activate tsc_shap
+CONDA_CUDA_OVERRIDE="11.2" mamba install shap -c conda-forge
+```
+
 ## Workflow
 
 ### Create sbatch scripts
