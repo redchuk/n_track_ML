@@ -4,15 +4,25 @@ somehow this gives +2% acc
 '''
 
 
-
-
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GroupKFold, StratifiedGroupKFold
+
+'''
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras import models
 from keras import layers
-from sklearn.model_selection import GroupKFold, StratifiedGroupKFold
+'''
+
+import tensorflow as tf
+# https://stackoverflow.com/questions/66814523/shap-deepexplainer-with-tensorflow-2-4-error
+tf.compat.v1.disable_v2_behavior()
+from tensorflow.keras import layers
+from tensorflow.keras import models
+from tensorflow.keras import regularizers
+from tensorflow.keras.layers import Dropout
+
 from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import Pipeline
 from datetime import datetime
@@ -64,7 +74,7 @@ features = [
 
 results = pd.DataFrame()
 ix = 0 # index for columns in results
-for i in range(20):
+for i in range(2):
     #X = data_sterile[features]
     labels = ((data_sterile['t_serum_conc_percent']) / 10).astype('int')
     groups = data_sterile['file']
@@ -78,6 +88,8 @@ for i in range(20):
         scaler.fit(X)
         X_norm = scaler.transform(X)
         X_test_norm = scaler.transform(X_test)
+
+        '''        
         model = models.Sequential()
         model.add(layers.Dense(256, activation='relu'))
         model.add(layers.Dense(256, activation='relu'))
@@ -92,18 +104,53 @@ for i in range(20):
                       metrics=['accuracy'])
         history = model.fit(X_norm,
                             y,
-                            epochs=500,
+                            epochs=100,
                             # batch_size=50,
                             validation_data=(X_test_norm, y_test),
                             verbose=0,
                             )
-        results["acc" + str(ix)] = history.history['accuracy']
-        results["val_acc" + str(ix)] = history.history['val_accuracy']
+        
+        '''
+
+        input_layer = layers.Input(shape=(20,))
+        layer1 = layers.Dense(256, activation='relu')(input_layer)
+        layer2 = layers.Dense(256, activation='relu')(layer1)
+        layer3 = layers.Dense(256, activation='relu')(layer2)
+        layer4 = layers.Dense(256, activation='relu')(layer3)
+        layer5 = layers.Dense(256, activation='relu')(layer4)
+        layer6 = layers.Dense(256, activation='relu')(layer5)
+        layer7 = layers.Dense(256, activation='relu')(layer6)
+        output_layer = layers.Dense(1, activation="sigmoid")(layer7)
+        model = models.Model(inputs=input_layer, outputs=output_layer)
+
+        model.compile(optimizer='adam',
+                      loss='binary_crossentropy',
+                      metrics=['accuracy'])
+
+        history = model.fit(X_norm,
+                            y,
+                            epochs=200,
+                            # batch_size=50,
+                            validation_data=(X_test_norm, y_test),
+                            verbose=0,
+                            )
+
+        results["acc" + str(ix)] = history.history['acc']
+        results["val_acc" + str(ix)] = history.history['val_acc']
         ix += 1
+
+        explainer = shap.DeepExplainer((model.layers[0].input, model.layers[-1].output), X_norm)
+        shap_values = explainer.shap_values(X_test_norm)
+        #shap.summary_plot(shap_values[0], feature_names=X.columns)
+
+
         # print(1-y.sum()/len(y))
         # print(1 - y_test.sum() / len(y_test))
         print(ix)
+
 dnn_results = results.iloc[:, range(1, len(results.columns), 2)]
 dnn_results['mean'] = dnn_results.mean(axis=1)
 plt.plot(dnn_results['mean'])
 plt.show()
+
+

@@ -207,7 +207,7 @@ dnn_results['mean'] = dnn_results.mean(axis=1)
 plt.plot(dnn_results['mean'])
 plt.show()
 
-
+# this moved to n_track_DNN_nff:
 # todo normalization
 # todo cv as in sgkf but no pipeline
 # todo repeat 63+acc
