@@ -15,6 +15,7 @@ from keras.layers import Dropout
 # from sklearn.ensemble import RandomForestClassifier
 
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedGroupKFold
 
 ''' 
 read the data 
@@ -150,58 +151,55 @@ tst = int((data_sterile['file'].unique().shape[0]) / 4)
 # test_choice = np.random.RandomState(7).choice(data_sterile['file'].unique(), tst, replace=False)
 
 results = pd.DataFrame()
-for i in range(30):
-    test_choice = np.random.choice(data_sterile['file'].unique(), tst, replace=False)
+ix = 0 # index for columns in results
+for i in range(20):
 
-    test_data = data_sterile[data_sterile['file'].isin(test_choice)]
-    train_data = data_sterile[~data_sterile['file'].isin(test_choice)]
-    train_data = train_data.dropna()
+    #X = data_sterile[features]
+    labels = ((data_sterile['t_serum_conc_percent']) / 10).astype('int')
+    groups = data_sterile['file']
+    gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
+    for train_idxs, test_idxs in gkf.split(data_sterile[features], labels, groups):
 
-    X = train_data[features]
 
-    y = train_data['t_serum_conc_percent']
-    y = (y / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' = 0
+        X = data_sterile[features].loc[train_idxs]
+        X_test = data_sterile[features].loc[test_idxs]
+        y = labels.loc[train_idxs]
+        y_test = labels.loc[test_idxs]
 
-    X_test = test_data[features]
 
-    y_test = test_data['t_serum_conc_percent']
-    y_test = (y_test / 10).astype('int')  # binarize, '10% serum' = 1, '0.3% serum' = 0
+        scaler = StandardScaler()
+        scaler.fit(X)
+        X_norm = scaler.transform(X)
+        X_test_norm = scaler.transform(X_test)
 
-    #X_norm = X / X.max(axis=0)
-    #X_test_norm = X_test / X.max(axis=0)  # devided by X.max but not X_test.max, so that normalization is the same
+        model = models.Sequential()
+        model.add(layers.Dense(256, activation='relu'))
+        model.add(layers.Dense(256, activation='relu'))
+        model.add(layers.Dense(256, activation='relu'))
+        model.add(layers.Dense(256, activation='relu'))
+        model.add(layers.Dense(256, activation='relu'))
+        model.add(layers.Dense(256, activation='relu'))
+        model.add(layers.Dense(256, activation='relu'))
+        model.add(layers.Dense(1, activation='sigmoid'))
 
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X_norm = scaler.transform(X)
-    X_test_norm = scaler.transform(X_test)
+        model.compile(optimizer='adam',
+                      loss='binary_crossentropy',
+                      metrics=['accuracy'])
 
-    model = models.Sequential()
-    model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dense(1, activation='sigmoid'))
+        history = model.fit(X_norm,
+                            y,
+                            epochs=500,
+                            # batch_size=50,
+                            validation_data=(X_test_norm, y_test),
+                            verbose=0,
+                            )
 
-    model.compile(optimizer='adam',
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
+        results["acc" + str(ix)] = history.history['accuracy']
+        results["val_acc" + str(ix)] = history.history['val_accuracy']
+        ix += 1
 
-    history = model.fit(X_norm,
-                        y,
-                        epochs=500,
-                        # batch_size=50,
-                        validation_data=(X_test_norm, y_test),
-                        verbose=0,
-                        )
-
-    results["acc" + str(i)] = history.history['accuracy']
-    results["val_acc" + str(i)] = history.history['val_accuracy']
-
-    # print(1-y.sum()/len(y))
-    print(1 - y_test.sum() / len(y_test))
+        # print(1-y.sum()/len(y))
+        print(1 - y_test.sum() / len(y_test))
 
 dnn_results = results.iloc[:, range(1, len(results.columns), 2)]
 dnn_results['mean'] = dnn_results.mean(axis=1)
@@ -210,6 +208,7 @@ plt.show()
 
 
 # todo normalization
-# todo repeat 63acc
+# todo cv as in sgkf but no pipeline
+# todo repeat 63+acc
 # todo repeat Harris shap (monitor acc?)
 # todo make SHAP aggregated from repeats (monitor acc?)
