@@ -199,7 +199,8 @@ for i in range(20):
         ix += 1
 
         # print(1-y.sum()/len(y))
-        print(1 - y_test.sum() / len(y_test))
+        # print(1 - y_test.sum() / len(y_test))
+        print(ix)
 
 dnn_results = results.iloc[:, range(1, len(results.columns), 2)]
 dnn_results['mean'] = dnn_results.mean(axis=1)
