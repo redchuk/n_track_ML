@@ -141,7 +141,13 @@ for i in range(2):
 
         explainer = shap.DeepExplainer((model.layers[0].input, model.layers[-1].output), X_norm)
         shap_values = explainer.shap_values(X_test_norm)
-        #shap.summary_plot(shap_values[0], feature_names=X.columns)
+        '''shap.summary_plot(shap_values[0], 
+                          X_test_norm, 
+                          feature_names=X.columns, 
+                          sort=False, 
+                          color_bar=False, 
+                          plot_size=(25,10),
+                          )'''
 
 
         # print(1-y.sum()/len(y))
