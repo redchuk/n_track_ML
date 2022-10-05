@@ -72,13 +72,20 @@ features = [
     'f_outliers3SD_diff_xy'
 ]
 
+
+shap_vs_list = []
+sX_test_list = []
+s_id_list = []
+
 results = pd.DataFrame()
 ix = 0 # index for columns in results
-for i in range(2):
+for i in range(1):
     #X = data_sterile[features]
     labels = ((data_sterile['t_serum_conc_percent']) / 10).astype('int')
     groups = data_sterile['file']
     gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
+    idx_file_particle = data_sterile[['file', 'particle']]
+
     for train_idxs, test_idxs in gkf.split(data_sterile[features], labels, groups):
         X = data_sterile[features].loc[train_idxs]
         X_test = data_sterile[features].loc[test_idxs]
@@ -89,28 +96,8 @@ for i in range(2):
         X_norm = scaler.transform(X)
         X_test_norm = scaler.transform(X_test)
 
-        '''        
-        model = models.Sequential()
-        model.add(layers.Dense(256, activation='relu'))
-        model.add(layers.Dense(256, activation='relu'))
-        model.add(layers.Dense(256, activation='relu'))
-        model.add(layers.Dense(256, activation='relu'))
-        model.add(layers.Dense(256, activation='relu'))
-        model.add(layers.Dense(256, activation='relu'))
-        model.add(layers.Dense(256, activation='relu'))
-        model.add(layers.Dense(1, activation='sigmoid'))
-        model.compile(optimizer='adam',
-                      loss='binary_crossentropy',
-                      metrics=['accuracy'])
-        history = model.fit(X_norm,
-                            y,
-                            epochs=100,
-                            # batch_size=50,
-                            validation_data=(X_test_norm, y_test),
-                            verbose=0,
-                            )
-        
-        '''
+        sX_test_list.append(pd.DataFrame(X_test_norm))  # X_test?
+        s_id_list.append(idx_file_particle.loc[test_idxs])
 
         input_layer = layers.Input(shape=(20,))
         layer1 = layers.Dense(256, activation='relu')(input_layer)
@@ -141,18 +128,33 @@ for i in range(2):
 
         explainer = shap.DeepExplainer((model.layers[0].input, model.layers[-1].output), X_norm)
         shap_values = explainer.shap_values(X_test_norm)
-        '''shap.summary_plot(shap_values[0], 
+        shap_vs_list.append(shap_values[0])
+
+        shap.summary_plot(shap_values[0],
                           X_test_norm, 
                           feature_names=X.columns, 
                           sort=False, 
                           color_bar=False, 
                           plot_size=(25,10),
-                          )'''
+                          )
 
 
         # print(1-y.sum()/len(y))
         # print(1 - y_test.sum() / len(y_test))
         print(ix)
+
+    all_sX_test = pd.concat(sX_test_list)
+    all_splits_shap = np.concatenate(shap_vs_list)
+    all_s_id = pd.concat(s_id_list)
+
+    plt.title('aggregated')
+    shap.summary_plot(all_splits_shap,
+                      all_sX_test,
+                      feature_names=X.columns,
+                      sort=False,
+                      color_bar=False,
+                      plot_size=(25, 10),
+                      )
 
 dnn_results = results.iloc[:, range(1, len(results.columns), 2)]
 dnn_results['mean'] = dnn_results.mean(axis=1)
