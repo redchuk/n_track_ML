@@ -127,6 +127,20 @@ fsets['f_morph'] = ['area_micron', 'perimeter_au','serum_conc_percent','file']
 fsets['f_area'] = ['area_micron','serum_conc_percent','file']
 fsets['f_perim'] = ['perimeter_au','serum_conc_percent','file']
 
+# Discussion with Taras on 20220930: drop x and y, dxy is enough
+fsets['f_dxy'] = ['dxy','serum_conc_percent','file']
+fsets['f_dxy_angle'] = fsets['f_dxy'] + ['angle','dangle']
+fsets['f_dxy_angle_morph'] = fsets['f_dxy_angle'] + ['area_micron','perimeter_au']
+fsets['f_dxy_angle_morphd'] = fsets['f_dxy_angle_morph'] + ['darea','dperimeter']
+
+# forgot mindist...
+fsets['f_dxy_mindist'] = fsets['f_dxy'] + ['min_dist_pxs']
+fsets['f_dxy_mindist_angle'] = fsets['f_dxy_mindist'] + ['angle','dangle']
+fsets['f_dxy_mindist_angle_morph'] = fsets['f_dxy_mindist_angle'] + ['area_micron','perimeter_au']
+
+# try also without perimeter (might be redundant with area)"
+fsets['f_dxy_angle_area'] = fsets['f_dxy_angle'] + ['area_micron']
+fsets['f_dxy_mindist_angle_area'] = fsets['f_dxy_mindist_angle'] + ['area_micron']
 
 #print(fsets['f_mot_morph_dyn'])
 
