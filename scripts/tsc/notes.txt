@@ -380,4 +380,10 @@ for s in $(ls sbatch/le_k20_f_dxy_angle_area_20221003/*.sh); do sbatch $s; done;
 for s in $(ls sbatch/le_k20_f_dxy_mindist_angle_area_20221003/*.sh); do sbatch $s; done;
 
 
+##
+## 2022-10-05
+##
+
+srun --interactive -c4 --mem=4G -t04:00:00 -pgpu-oversub -Mukko --pty bash
+bash sbatch/SHAP/sbatch_shap_1.sh
 

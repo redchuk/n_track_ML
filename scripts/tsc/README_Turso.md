@@ -49,6 +49,16 @@ Copy of main environment, add SHAP.
 mamba create --clone tsc --name tsc_shap
 conda activate tsc_shap
 CONDA_CUDA_OVERRIDE="11.2" mamba install shap -c conda-forge
+CONDA_CUDA_OVERRIDE="11.2" mamba install matplotlib -c conda-forge
+```
+
+Copy of notebook environment, add SHAP
+```
+mamba create --clone tsc_jupyter2 --name tsc_jupyter_shap
+conda activate tsc_jupyter_shap
+CONDA_CUDA_OVERRIDE="11.2" mamba install shap -c conda-forge
+pip install scikeras
+python -m ipykernel install --user --name tsc_jupyter_shap --display-name "Python (tsc_jupyter_shap)"
 ```
 
 ## Workflow

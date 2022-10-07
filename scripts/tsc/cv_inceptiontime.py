@@ -106,13 +106,17 @@ def apply_standard_scaling(X,mean,std):
     logger.debug(Xt.shape)
 
     return Xt
-    
+
+
+## Look for a high-performing model, they explain why the average is so high.
+## But what is it about that split that makes it so successful?
+TARGET_ACCURACY = 0.98
 
 '''
 Single cross-validation run
 '''
 def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
-                     kernel_size, epochs=250, nb_classes=2):
+                     kernel_size, epochs=250, feature_names=None, nb_classes=2, return_model_eval=False):
     output_directory = output_it
     input_shape = X_inc.shape[1:]
     verbose = False
@@ -192,27 +196,40 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         fold_f1 = f1_score(truth, pred)
         scores.loc[len(scores)] = [fold_acc,fold_prc,fold_rec,fold_f1]
 
-        # SHAP
-        #explainer = shap.DeepExplainer((classifier.model_.layers[0].input, classifier.model_.layers[-1].output), X_train_scaled)
-        #shap_values = explainer.shap_values(X_val_scaled)
-        explainer = shap.GradientExplainer(classifier.model_, X_train_scaled)
-        shap_values = explainer.shap_values(X_val_scaled)
-        shap_vs_list.append(shap_values)
-        
+        model_eval = None
+        # if accuracy is close enough to target,
+        # save model and SHAP values
+        print(fold_acc)
+        if return_model_eval and abs(TARGET_ACCURACY - fold_acc) < 0.02:
+        #if True:
+            # SHAP
+            #explainer = shap.DeepExplainer((classifier.model_.layers[0].input, classifier.model_.layers[-1].output), X_train_scaled)
+            #shap_values = explainer.shap_values(X_val_scaled)
+            print("sufficiently accurate model found")
+            explainer = shap.GradientExplainer(classifier.model_, X_train_scaled)
+            #explainer.expected_value = explainer.expected_value[0]
+            shap_values = explainer.shap_values(X_val_scaled)
+
+            model_eval = (classifier.model_, feature_names, shap_values, X_val_scaled, pred, truth)
+            return pd.DataFrame(), model_eval
     
     scores['classifier'] = 'InceptionTime'
     scores['kernel_size'] = kernel_size
     scores['epochs'] = epochs
 
-    return scores
+    return scores, model_eval
 
 
 '''
 Repeat cross-validation
 '''
-def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10,job_id=''):
+def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10,job_id='', return_model_eval=False):
     logger.info(fset)
     X, dfX, y, groups, debugm, debugn = get_X_dfX_y_groups(data, fset)
+
+    # fset includes also class and file, get feature names for SHAP
+    feature_names = dfX.columns
+    print(feature_names)
 
     # prepare_data_for inception returns all, no split to train and test sets
     X_inc, y_inc, nb_classes, y_true, enc = prepare_data_for_inception(X,y)
@@ -224,12 +241,22 @@ def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, r
 
     scores_all = []
     for i in range(repeats):
+        print('repeat: %d/%d' % (i+1, repeats))
         logger.debug('repeat: %d/%d' % (i+1, repeats))
-        scores = inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
-                                  kernel_size=kernel_size, epochs=epochs, \
-                                  nb_classes=nb_classes)
+        scores, model_eval = inceptiontime_cv(cv, X_inc, y_inc, y_true, \
+                                              groups, output_it, \
+                                              kernel_size=kernel_size, epochs=epochs, \
+                                              feature_names=feature_names, \
+                                              nb_classes=nb_classes, \
+                                              return_model_eval=return_model_eval)
         scores['repeat'] = i+1
         scores_all.append(scores)
+
+        #print(return_model_eval)
+        #print(model_eval)
+        if return_model_eval and (model_eval != None):
+            return model_eval
+        
     scores = pd.concat(scores_all)
 
     scores['cv'] = str(cv)
