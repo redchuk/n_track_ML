@@ -3,7 +3,6 @@ unlike in n_track_DNN, here the files with <30 frames are dropped
 somehow this gives +2% acc
 '''
 
-
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -16,6 +15,7 @@ from keras import layers
 '''
 
 import tensorflow as tf
+
 # https://stackoverflow.com/questions/66814523/shap-deepexplainer-with-tensorflow-2-4-error
 tf.compat.v1.disable_v2_behavior()
 from tensorflow.keras import layers
@@ -72,15 +72,15 @@ features = [
     'f_outliers3SD_diff_xy'
 ]
 
-
 shap_vs_list = []
 sX_test_list = []
 s_id_list = []
 
+shap_repeats = pd.DataFrame()
 results = pd.DataFrame()
-ix = 0 # index for columns in results
-for i in range(1):
-    #X = data_sterile[features]
+ix = 0  # index for columns in results
+for i in range(2):
+    # X = data_sterile[features]
     labels = ((data_sterile['t_serum_conc_percent']) / 10).astype('int')
     groups = data_sterile['file']
     gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
@@ -96,7 +96,7 @@ for i in range(1):
         X_norm = scaler.transform(X)
         X_test_norm = scaler.transform(X_test)
 
-        sX_test_list.append(pd.DataFrame(X_test_norm))  # X_test?
+        sX_test_list.append(pd.DataFrame(X_test_norm, columns=X_test.columns))  # X_test?
         s_id_list.append(idx_file_particle.loc[test_idxs])
 
         input_layer = layers.Input(shape=(20,))
@@ -131,13 +131,12 @@ for i in range(1):
         shap_vs_list.append(shap_values[0])
 
         shap.summary_plot(shap_values[0],
-                          X_test_norm, 
-                          feature_names=X.columns, 
-                          sort=False, 
-                          color_bar=False, 
-                          plot_size=(25,10),
+                          X_test_norm,
+                          feature_names=X.columns,
+                          sort=False,
+                          color_bar=False,
+                          plot_size=(10, 10),
                           )
-
 
         # print(1-y.sum()/len(y))
         # print(1 - y_test.sum() / len(y_test))
@@ -153,12 +152,26 @@ for i in range(1):
                       feature_names=X.columns,
                       sort=False,
                       color_bar=False,
-                      plot_size=(25, 10),
+                      plot_size=(10, 10),
                       )
+
+    df_all_splits_shap = pd.DataFrame(all_splits_shap, columns=all_sX_test.columns).add_prefix('shap_')
+
+    list_to_concat = [all_sX_test.reset_index(),
+                      df_all_splits_shap.reset_index(),
+                      all_s_id.reset_index()]
+
+    df_all = pd.concat(list_to_concat, axis=1) \
+        .drop('index', axis=1).set_index(['file', 'particle']).add_prefix(str(i) + 'r_')
+
+    #if shap_repeats.empty:
+    #    shap_repeats = df_all
+    #else:
+    #    shap_repeats = shap_repeats.join(df_all)
 
 dnn_results = results.iloc[:, range(1, len(results.columns), 2)]
 dnn_results['mean'] = dnn_results.mean(axis=1)
 plt.plot(dnn_results['mean'])
 plt.show()
 
-
+# todo: averaging SHAP
