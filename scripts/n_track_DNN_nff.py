@@ -75,7 +75,7 @@ features = [
 ix = 0  # index for columns in results
 shap_repeats = pd.DataFrame()
 
-for i in range(2):
+for i in range(5):
     # X = data_sterile[features]
 
     shap_vs_list = []
@@ -133,7 +133,7 @@ for i in range(2):
         explainer = shap.DeepExplainer((model.layers[0].input, model.layers[-1].output), X_norm)
         shap_values = explainer.shap_values(X_test_norm)
         shap_vs_list.append(shap_values[0])
-
+        '''
         shap.summary_plot(shap_values[0],
                           X_test_norm,
                           feature_names=X.columns,
@@ -141,7 +141,7 @@ for i in range(2):
                           color_bar=False,
                           plot_size=(10, 10),
                           )
-
+        '''
         # print(1-y.sum()/len(y))
         # print(1 - y_test.sum() / len(y_test))
         print(ix)
@@ -151,6 +151,7 @@ for i in range(2):
     all_s_id = pd.concat(s_id_list)
 
     plt.title('aggregated')
+    '''
     shap.summary_plot(all_splits_shap,
                       all_sX_test,
                       feature_names=X.columns,
@@ -158,7 +159,7 @@ for i in range(2):
                       color_bar=False,
                       plot_size=(10, 10),
                       )
-
+    '''
     df_all_splits_shap = pd.DataFrame(all_splits_shap, columns=all_sX_test.columns).add_prefix('shap_')
 
     list_to_concat = [all_sX_test.reset_index(),
@@ -180,3 +181,28 @@ plt.plot(dnn_results['mean'])
 plt.show()
 
 # todo: averaging SHAP
+# doesn't seem any cleaner when averaged?
+
+'''
+#  sanity check:
+test = shap_repeats.copy()
+test[test.columns[range(0,len(test.columns),40)]].mean(axis=1)
+for i in df_all.columns:
+    print(i)
+    print(test.columns[range(df_all.columns.tolist().index(i), len(test.columns), 40)])
+'''
+
+shap_averaged = pd.DataFrame()
+for i in df_all.columns:
+    shap_averaged[i] = shap_repeats[shap_repeats.columns[range(df_all.columns.tolist().index(i),
+                                                               len(shap_repeats.columns),
+                                                               40)]].mean(axis=1)
+
+shap.summary_plot(shap_averaged.iloc[:, 20:].to_numpy(),
+                  shap_averaged.iloc[:, :20].to_numpy(),
+                  feature_names=X.columns,
+                  sort=False,
+                  color_bar=False,
+                  plot_size=(10, 10),
+                  )
+
