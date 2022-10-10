@@ -72,15 +72,19 @@ features = [
     'f_outliers3SD_diff_xy'
 ]
 
-shap_vs_list = []
-sX_test_list = []
-s_id_list = []
-
-shap_repeats = pd.DataFrame()
-results = pd.DataFrame()
 ix = 0  # index for columns in results
+shap_repeats = pd.DataFrame()
+
 for i in range(2):
     # X = data_sterile[features]
+
+    shap_vs_list = []
+    sX_test_list = []
+    s_id_list = []
+
+
+    results = pd.DataFrame()
+
     labels = ((data_sterile['t_serum_conc_percent']) / 10).astype('int')
     groups = data_sterile['file']
     gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
@@ -161,13 +165,14 @@ for i in range(2):
                       df_all_splits_shap.reset_index(),
                       all_s_id.reset_index()]
 
+    df_all = None
     df_all = pd.concat(list_to_concat, axis=1) \
         .drop('index', axis=1).set_index(['file', 'particle']).add_prefix(str(i) + 'r_')
 
-    #if shap_repeats.empty:
-    #    shap_repeats = df_all
-    #else:
-    #    shap_repeats = shap_repeats.join(df_all)
+    if shap_repeats.empty:
+        shap_repeats = df_all
+    else:
+        shap_repeats = shap_repeats.join(df_all)
 
 dnn_results = results.iloc[:, range(1, len(results.columns), 2)]
 dnn_results['mean'] = dnn_results.mean(axis=1)
