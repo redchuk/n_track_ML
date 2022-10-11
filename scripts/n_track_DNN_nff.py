@@ -74,16 +74,14 @@ features = [
 
 ix = 0  # index for columns in results
 shap_repeats = pd.DataFrame()
+results = pd.DataFrame()
 
-for i in range(5):
+for i in range(50):
     # X = data_sterile[features]
 
     shap_vs_list = []
     sX_test_list = []
     s_id_list = []
-
-
-    results = pd.DataFrame()
 
     labels = ((data_sterile['t_serum_conc_percent']) / 10).astype('int')
     groups = data_sterile['file']
