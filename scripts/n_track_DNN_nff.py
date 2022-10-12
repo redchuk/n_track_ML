@@ -204,3 +204,13 @@ shap.summary_plot(shap_averaged.iloc[:, 20:].to_numpy(),
                   plot_size=(10, 10),
                   )
 
+#shap.dependence_plot('49r_f_most_central_mask', shap_averaged.iloc[:, 20:].to_numpy(), shap_averaged.iloc[:, :20])
+
+#for i in range(20):
+#    shap.dependence_plot(i, shap_averaged.iloc[:, 20:].to_numpy(), shap_averaged.iloc[:, :20])
+
+
+# from matplotlib import rcParams
+# rcParams.update({'figure.autolayout': True})
+# cutoff labels solution:
+# https://stackoverflow.com/questions/6774086/how-to-adjust-padding-with-cutoff-or-overlapping-labels
