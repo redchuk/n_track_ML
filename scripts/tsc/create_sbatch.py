@@ -2,6 +2,7 @@ import click
 from datetime import datetime
 from jinja2 import Environment
 from pathlib import Path, PosixPath
+import re
 import subprocess
 
 BASH = """#!/bin/bash
@@ -26,7 +27,7 @@ BASH = """#!/bin/bash
 # Load the Conda module
 module use /proj/hajaalin/Settings/LMUModules/
 module --ignore-cache load Miniconda3/4.11.0
-source activate tsc
+source activate tsc_shap
 conda env list
 which python
 
@@ -45,21 +46,19 @@ echo "Done."
 date
 """
 
-def git_clone(branch):
+def git_clone(repo, branch):
     tmpstr = "tmp_clone_" + datetime.now().strftime("%H%M%S%f")
     tmp = PosixPath(tmpstr)
-    repo = "git@github.com-n_track_ML:hajaalin/n_track_ML.git"
     
     cmd = "git clone -b %s --single-branch --depth 1 %s %s" % (branch, repo, str(tmp))
     subprocess.run(cmd.split())
 
     # save only the scripts directory
-    for f in (tmp / 'data').iterdir():
-        f.unlink()
-    for f in (tmp / 'notebooks').iterdir():
-        f.unlink()
-    (tmp / 'data').rmdir()
-    (tmp / 'notebooks').rmdir()
+    for subdir in ['data', 'notebooks']:
+        if (tmp / subdir).is_dir():
+            for f in (tmp / subdir).iterdir():
+                f.unlink()
+            (tmp / subdir).rmdir()
 
     cmd = "git --git-dir ./" + tmpstr + "/.git log -n 1 --pretty=format:'%H'"
     result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
@@ -67,14 +66,15 @@ def git_clone(branch):
     print(commit)
 
     root = Path("/proj/hajaalin/Projects/n_track_ML/run")
-    prog_dir = root / ("n_track_ML_" + commit)
+    project = re.search(".*/(.*).git$", repo).groups()[0]
+    prog_dir = root / (project + "_" + commit)
     if not prog_dir.exists():
         tmp.rename(prog_dir)
     #else:
     #    cmd = "rm -rf %s" % str(Path(__file__).parent.absolute() / tmpstr)
     #    subprocess.run(cmd)
-    
-    return str(prog_dir / "scripts" / "tsc")
+
+    return prog_dir
 
 @click.command()
 @click.option("--job_name", type=str, default="tsc-it")
@@ -84,19 +84,27 @@ def git_clone(branch):
 @click.option("--time", type=str, default="4:00:00")
 @click.option("--test", is_flag=True, default=False, show_default=True)
 @click.option("--prog", type=str, default="cv_inceptiontime.py")
-@click.option("--branch", type=str)
+@click.option("--branch_n", type=str)
+@click.option("--branch_i", type=str)
 @click.option("--paths", type=str, default="paths.yml")
 @click.option("--options", type=str, default="'--epochs=100 --kernel_size=15 --repeats=20'")
 @click.option("--sbatch_dir", type=str, default="./sbatch")
 @click.option("--loop_epochs", type=(int,int,int))
-def create_sbatch(job_name, job_dir, cluster, partition, time, test, prog, branch, paths, options, sbatch_dir, loop_epochs):
+def create_sbatch(job_name, job_dir, cluster, partition, time, test, prog, branch_n, branch_i, paths, options, sbatch_dir, loop_epochs):
     job_dir = Path(job_dir) / job_name
     job_dir.mkdir(exist_ok=True, parents=True)
 
-    if test:
-        prog_dir = Path(__file__).parent.absolute()
-    else:
-        prog_dir = git_clone(branch)
+    prog_dir = Path(__file__).parent.absolute()
+    inceptiontime_dir = 'TEST'
+    
+    if not test:
+        # clone n_track_ML
+        repo = "git@github.com-n_track_ML:hajaalin/n_track_ML.git"
+        prog_dir = str(git_clone(repo, branch_n) / "scripts" / "tsc")
+
+        # clone InceptionTime
+        repo = "git@github.com-InceptionTime:hajaalin/InceptionTime.git"
+        inceptiontime_dir = str(git_clone(repo, branch_i))        
         
     values = {'job_name': job_name, \
               'job_dir': str(job_dir), \
@@ -105,6 +113,7 @@ def create_sbatch(job_name, job_dir, cluster, partition, time, test, prog, branc
               'time': time, \
               'prog_dir': prog_dir, \
               'prog': prog, \
+              'inceptiontime_dir': inceptiontime_dir, \
               'paths': paths, \
               'options': options, \
     }
@@ -123,7 +132,7 @@ def create_sbatch(job_name, job_dir, cluster, partition, time, test, prog, branc
         # remember original options
         for epochs in range(emin,emax,edelta):
             print("epochs: " + str(epochs))
-            values['options'] = options + " --epochs=" + str(epochs) + " --now=" + now
+            values['options'] = options + " --epochs=" + str(epochs) + " --now=" + now + " --inceptiontime_dir=" + inceptiontime_dir
             
             sbatch = Environment().from_string(BASH).render(values)
             filename = "sbatch_" + job_name + "_e" + str(epochs) + ".sh"
@@ -132,7 +141,7 @@ def create_sbatch(job_name, job_dir, cluster, partition, time, test, prog, branc
                 print(sbatch, file=f)
 
     else:
-        values['options'] = options + " --now=" + now
+        values['options'] = options + " --now=" + now + " --inceptiontime_dir=" + inceptiontime_dir
         sbatch = Environment().from_string(BASH).render(values)
         filename = "sbatch_" + job_name + ".sh"
 

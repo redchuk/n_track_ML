@@ -1,4 +1,3 @@
-import keras
 from pathlib import Path
 import numpy as np
 import shap
@@ -277,6 +276,7 @@ import sys
 import time
 
 @click.command()
+@click.option("--inceptiontime_dir", type=str)
 @click.option("--paths", type=str, default="paths.yml")
 @click.option("--kernel_size", type=int, default=20)
 @click.option("--epochs", type=int, default=100)
@@ -286,7 +286,7 @@ import time
 @click.option("--job_name", type=str, default="tsc_it")
 @click.option("--job_id", type=str)
 @click.option("--now", type=str)
-def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_name, job_id, now):
+def cv_inceptiontime(inceptiontime_dir, paths, kernel_size, epochs, fset, loop_fsets, repeats, job_name, job_id, now):
     paths = parse_config(paths)
 
     log_dir = Path(paths["log"]["tsc"]) / job_name / now
@@ -306,12 +306,18 @@ def cv_inceptiontime(paths, kernel_size, epochs, fset, loop_fsets, repeats, job_
     logger.addHandler(file_handler)
     logger.info(f"Finished logger configuration!")
     print("Logging to " + str(log_file))
+
+    # log the version of this code
     logger.info(Path(__file__).absolute())
 
-
     # add InceptionTime source to Python path
-    src_inceptiontime = paths["src"]["inceptiontime"]
-    sys.path.insert(1, src_inceptiontime)
+    if inceptiontime_dir == 'TEST':
+        # this is test mode, without cloning code from GitHub
+        inceptiontime_dir = paths["src"]["inceptiontime"]
+    sys.path.insert(1, inceptiontime_dir)
+
+    # log the InceptionTime version
+    logger.info(inceptiontime_dir)
 
     # output folders
     output_cv = Path(paths["output"]["cv"]) / job_name / now

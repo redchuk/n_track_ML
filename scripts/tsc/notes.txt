@@ -387,3 +387,55 @@ for s in $(ls sbatch/le_k20_f_dxy_mindist_angle_area_20221003/*.sh); do sbatch $
 srun --interactive -c4 --mem=4G -t04:00:00 -pgpu-oversub -Mukko --pty bash
 bash sbatch/SHAP/sbatch_shap_1.sh
 
+
+##
+## 2022-10-12
+##
+
+# test getting inceptiontime from github
+
+job="test_git_it"
+fset="f_dxy_mindist_angle_area"
+ts="20221012"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --test --branch_n laxcat --job_name $job_name --loop_epochs 2 6 2 --options "--fset $fset --kernel_size=20 --repeats=2" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/test_git_it_f_dxy_mindist_angle_area_20221012/*.sh); do sbatch $s; done;
+
+
+##
+## 2022-10-13
+##
+
+job="test_git_it"
+fset="f_dxy_mindist_angle_area"
+ts="20221013"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --branch_i master --branch_n laxcat --job_name $job_name --loop_epochs 2 6 2 --options "--fset $fset --kernel_size=20 --repeats=2" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/test_git_it_f_dxy_mindist_angle_area_20221013/*.sh); do sbatch $s; done;
+
+
+job="test_it_tf_fix"
+fset="f_dxy_mindist_angle_area"
+ts="20221013"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --test --branch_i master --branch_n laxcat --job_name $job_name --loop_epochs 2 6 2 --options "--fset $fset --kernel_size=20 --repeats=2" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/test_it_tf_fix_f_dxy_mindist_angle_area_20221013/*.sh); do sbatch $s; done;
+
+
+# check that epoch loop still looks ok
+
+job="le_k20"
+fset="f_dxy_mindist_angle_area"
+ts="20221013"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --branch_i master --branch_n laxcat --job_name $job_name --loop_epochs 2 50 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/$job_name/*.sh); do sbatch $s; done;
+
