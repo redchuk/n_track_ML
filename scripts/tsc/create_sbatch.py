@@ -27,7 +27,7 @@ BASH = """#!/bin/bash
 # Load the Conda module
 module use /proj/hajaalin/Settings/LMUModules/
 module --ignore-cache load Miniconda3/4.11.0
-source activate tsc
+source activate tsc_shap
 conda env list
 which python
 
