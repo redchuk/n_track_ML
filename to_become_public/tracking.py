@@ -1,9 +1,6 @@
 import glob
 import numpy as np
-import math
 import trackpy as tp
-from matplotlib import pyplot as plt
-from matplotlib.colors import LogNorm
 from skimage import img_as_float
 from skimage.filters import gaussian, threshold_multiotsu
 from skimage.exposure import rescale_intensity
@@ -12,10 +9,19 @@ from apeer_ometiff_library import io as ome
 from pystackreg import StackReg
 import pandas as pd
 import subprocess
+import xml.etree.ElementTree as ET
 
 
 def get_git_hash():
     return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+
+
+def get_pxsize(ome_meta):
+    xml = ET.fromstring(ome_meta)
+    for image in xml:
+        for pixels in image:
+            pxsize = pixels.get('PhysicalSizeX')
+    return float(pxsize)
 
 
 def binary(dapi, gauss=1, classes=3, nbins=1000, min_size=15000, area_threshold=5000):
@@ -137,7 +143,7 @@ def add_xy_deltas(df):
     return data_a
 
 
-# todo: test below to be removed, or make bash script from it? main method?
+# todo: change paths before publication
 inp_path = 'to_become_public/example_images/*ome.tif'
 out_path = 'to_become_public/tracking_output/'
 
@@ -161,8 +167,7 @@ for file in glob.glob(inp_path, recursive=True):
     filename = str(file).split('\\')[-1]
 
     (tiff, meta) = ome.read_ometiff(file)
-    xy_pxsize = float((meta.split(' ')[57]).split("\"")[1])
-    # todo: parse xml as Harri explained, https://www.geeksforgeeks.org/xml-parsing-python/
+    xy_pxsize = get_pxsize(meta)
     label_serum = int(filename.split('_')[1])
 
     chrom = rescale_intensity(tiff[:, 0, 0, :, :])
