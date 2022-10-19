@@ -68,7 +68,6 @@ def regis(chrom, lamin, fast=False):
 def find_dots(stack, minmass=100000, diameter=11, search_range=20, memory=3, threshold=20):
     tp.quiet()
     f = tp.batch(stack, diameter=diameter, minmass=minmass)
-    # todo: can it be just 'parameter' instead of 'parameter = parameter'?
     t = tp.link(f, search_range, memory=memory)
     t1 = tp.filter_stubs(t, threshold)
     return t1
