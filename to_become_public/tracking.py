@@ -130,10 +130,10 @@ def add_xy_deltas(df):
     dots = df['particle'].unique()
 
     for i in dots:
-        data_p = df[df["particle"] == i]
-        data_p["diff_y_micron"] = data_p["y_micron"].diff()
-        data_p["diff_x_micron"] = data_p["x_micron"].diff()
-        data_p["diff_xy_micron"] = ((data_p["diff_x_micron"]) ** 2 + (data_p["diff_y_micron"]) ** 2) ** .5
+        data_p = df[df['particle'] == i]
+        data_p['diff_y_micron'] = data_p['y_micron'].diff()
+        data_p['diff_x_micron'] = data_p['x_micron'].diff()
+        data_p['diff_xy_micron'] = ((data_p['diff_x_micron']) ** 2 + (data_p['diff_y_micron']) ** 2) ** .5
 
         data_a = data_a.append(data_p, ignore_index=True, sort=False)
 
@@ -160,6 +160,12 @@ columns_raw = ['file',
                'min_dist_micron',
                ]
 
+canonical_fnames = {'diff_xy_micron': 'D',      # Locus displacement
+                    'area_micron': 'A',         # Nuclear area
+                    'perimeter_au_norm': 'P',   # Nuclear perimeter
+                    'min_dist_micron': 'Dist',  # Minimal distance from locus to nuclear rim, microns
+                    }
+
 data_raw = pd.DataFrame(columns=columns_raw)
 
 for file in glob.glob(inp_path, recursive=True):
@@ -179,4 +185,6 @@ for file in glob.glob(inp_path, recursive=True):
     add_data = add_xy_deltas(add_data)
     data_raw = data_raw.append(add_data, ignore_index=True, sort=False)
 
-data_raw.iloc[:, 0:len(columns_raw)].to_csv(out_path + 'tracking_raw.csv')
+data_raw.iloc[:, 0:len(columns_raw)] \
+    .rename(columns=canonical_fnames) \
+    .to_csv(out_path + 'tracking_raw.csv')
