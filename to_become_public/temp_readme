@@ -5,7 +5,7 @@ example_images
     imgs to be used for tracking, OME-TIFF
 
 data_tabular
-    dataset for ML, csv
+    * dataset for ML, csv
 
 scripts
     * tracking (serumconc from filename) + aggregate()
