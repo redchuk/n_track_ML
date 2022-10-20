@@ -3,8 +3,9 @@ import numpy as np
 import shap
 import sklearn
 from sklearn.model_selection import StratifiedGroupKFold
-#import tensorflow as tf
+import tensorflow as tf
 # https://stackoverflow.com/questions/66814523/shap-deepexplainer-with-tensorflow-2-4-error
+#from tensorflow.compat.v1.keras.backend import get_session
 #tf.compat.v1.disable_v2_behavior() 
 
 from utility import parse_config
@@ -12,6 +13,7 @@ from etl_tsc import load_data, get_X_dfX_y_groups, fsets
 
 import logging
 logger = logging.getLogger(__name__)
+
 
 '''
 This method was copied and modified from 'prepare_data' in InceptionTime/main.py:
@@ -165,7 +167,7 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         #logger.debug("scaled2")
         #logger.debug(X_train_scaled)
        
-        classifier = KerasClassifier(model=create_model, \
+        classifier = KerasClassifier(model=create_model(), \
                                      epochs=epochs, \
                                      batch_size=batch_size, \
                                      verbose=verbose)
@@ -200,16 +202,18 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         # save model and SHAP values
         print(fold_acc)
         if return_model_eval and abs(TARGET_ACCURACY - fold_acc) < 0.02:
+            print("sufficiently accurate model found")
         #if True:
             # SHAP
-            #explainer = shap.DeepExplainer((classifier.model_.layers[0].input, classifier.model_.layers[-1].output), X_train_scaled)
-            #shap_values = explainer.shap_values(X_val_scaled)
-            print("sufficiently accurate model found")
+            shap.explainers._deep.deep_tf.op_handlers["AddV2"] = shap.explainers._deep.deep_tf.passthrough
+            explainer = shap.DeepExplainer((classifier.model_.layers[0].input, classifier.model_.layers[-1].output), X_train_scaled)
+            shap_values_deep = explainer.shap_values(X_val_scaled)
+
             explainer = shap.GradientExplainer(classifier.model_, X_train_scaled)
             #explainer.expected_value = explainer.expected_value[0]
-            shap_values = explainer.shap_values(X_val_scaled)
+            shap_values_grad = explainer.shap_values(X_val_scaled)
 
-            model_eval = (classifier.model_, feature_names, shap_values, X_val_scaled, pred, truth)
+            model_eval = (classifier.model_, feature_names, shap_values_deep, shap_values_grad, X_val_scaled, pred, truth)
             return pd.DataFrame(), model_eval
     
     scores['classifier'] = 'InceptionTime'
