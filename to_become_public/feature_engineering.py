@@ -1,5 +1,5 @@
 import pandas as pd
-
+import numpy as np
 
 data = pd.read_csv('to_become_public/tracking_output/data_47091baa.csv')
 
@@ -34,17 +34,18 @@ data_agg = data.groupby(['file', 'particle']).agg(serum=('serum', 'first'),
                                                   # Variance of locus distance to nuclear periphery
                                                   )
 
-data_agg['f_Rvar_diff_xy_micron'] = data_agg['VarD'] / data_agg['f_mean_diff_xy_micron']
-data_agg['f_Rvar_dist_micron'] = data_agg['VarDist'] / data_agg['MDist']
-# Relative variance
+data_agg['rVarD'] = data_agg['VarD'] / data_agg['MD']
+# Relative variance of locus displacement
+data_agg['rVarDist'] = data_agg['VarDist'] / data_agg['MDist']
+# Relative variance of locus distance to nuclear periphery
 
-data_agg['f_total_displacement'] = np.sqrt((data_agg['temp_sum_dX']) ** 2 + (data_agg['temp_sum_dY']) ** 2)
-# distance from first to last coordinate
-data_agg['f_persistence'] = data_agg['f_total_displacement'] / data_agg['temp_sum_D']
-# shows how directional the movement is
+data_agg['TD'] = np.sqrt((data_agg['temp_sum_dX']) ** 2 + (data_agg['temp_sum_dY']) ** 2)
+# Total locus displacement
+data_agg['Pers'] = data_agg['TD'] / data_agg['temp_sum_D']
+# Persistence of locus movement
 
-data_agg['file_mean_diff_xy_micron'] = data_agg.groupby('file')['f_mean_diff_xy_micron'].transform(np.max)
-data_agg['f_fastestemp_mask'] = np.where((data_agg['f_mean_diff_xy_micron'] == data_agg['file_mean_diff_xy_micron']), 1, 0)
+data_agg['file_mean_diff_xy_micron'] = data_agg.groupby('file')['MD'].transform(np.max)
+data_agg['f_fastestemp_mask'] = np.where((data_agg['MD'] == data_agg['file_mean_diff_xy_micron']), 1, 0)
 # DO NOT USE FOR guide AS TARGET (telo!)
 # the fastest (or the only available) dot in the nucleus is 1, the rest is 0
 
@@ -76,11 +77,11 @@ data_agg['f_slope_perimeter_au_norm'] = data_slope_perimeter
 data_SD_diff_xy_micron = data.groupby(['file', 'particle']).agg(SD_diff=('D', 'std'))
 data_i = data.set_index(['file', 'particle'])
 data_i['SD_diff_xy_micron'] = data_SD_diff_xy_micron
-data_i['f_mean_diff_xy_micron'] = data_agg['f_mean_diff_xy_micron']
+data_i['MD'] = data_agg['MD']
 data_i['outliers2SD_diff_xy'] = np.where((data_i['D'] >
-                                          (data_i['f_mean_diff_xy_micron'] + 2 * data_i['SD_diff_xy_micron'])), 1, 0)
+                                          (data_i['MD'] + 2 * data_i['SD_diff_xy_micron'])), 1, 0)
 data_i['outliers3SD_diff_xy'] = np.where((data_i['D'] >
-                                          (data_i['f_mean_diff_xy_micron'] + 3 * data_i['SD_diff_xy_micron'])), 1, 0)
+                                          (data_i['MD'] + 3 * data_i['SD_diff_xy_micron'])), 1, 0)
 data_agg['f_outliers2SD_diff_xy'] = data_i.groupby(['file', 'particle']) \
     .agg(f_outliers2SD_diff_xy=('outliers2SD_diff_xy', 'sum'))
 data_agg['f_outliers3SD_diff_xy'] = data_i.groupby(['file', 'particle']) \
