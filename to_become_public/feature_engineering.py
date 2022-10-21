@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from scipy.stats import linregress
 
 data = pd.read_csv('to_become_public/tracking_output/data_47091baa.csv')
 
@@ -44,58 +45,53 @@ data_agg['TD'] = np.sqrt((data_agg['temp_sum_dX']) ** 2 + (data_agg['temp_sum_dY
 data_agg['Pers'] = data_agg['TD'] / data_agg['temp_sum_D']
 # Persistence of locus movement
 
-data_agg['file_mean_diff_xy_micron'] = data_agg.groupby('file')['MD'].transform(np.max)
-data_agg['f_fastestemp_mask'] = np.where((data_agg['MD'] == data_agg['file_mean_diff_xy_micron']), 1, 0)
-# DO NOT USE FOR guide AS TARGET (telo!)
-# the fastest (or the only available) dot in the nucleus is 1, the rest is 0
+data_agg['temp_file_MD'] = data_agg.groupby('file')['MD'].transform(np.max)
+data_agg['ifFast'] = np.where((data_agg['MD'] == data_agg['temp_file_MD']), 1, 0)
+# True for the fastest homologous locus in the nucleus (highest MD)
 
-data_agg['f_min_dist_range'] = data_agg['temp_max_Dist'] - data_agg['temp_min_Dist']
-# min_dist change within timelapse (max-min) for each dot
-data_agg['f_total_min_dist'] = data_agg['temp_end_Dist'] - data_agg['temp_beg_Dist']
-# how distance changed within timelapse (frame29-frame0)
+data_agg['DistR'] = data_agg['temp_max_Dist'] - data_agg['temp_min_Dist']
+# Range of locus distance to nuclear periphery
+data_agg['TDist'] = data_agg['temp_end_Dist'] - data_agg['temp_beg_Dist']
+# Total locus radial displacement
 
-data_agg['file_max_min_dist_micron'] = data_agg.groupby('file')['MDist'].transform(np.max)
-data_agg['f_most_central_mask'] = np.where((data_agg['MDist'] == data_agg['file_max_min_dist_micron']), 1,
-                                           0)
-# DO NOT USE FOR guide AS TARGET (telo!)
-# the most central (or the only available) dot in the nucleus is 1, the rest is 0
+data_agg['temp_file_max_Dist'] = data_agg.groupby('file')['MDist'].transform(np.max)
+data_agg['ifCentr'] = np.where((data_agg['MDist'] == data_agg['temp_file_max_Dist']), 1, 0)
+# True for the homologous locus furthest from nuclear rim (highest MDist)
 
 data_slope = data.groupby(['file', 'particle']).apply(lambda x: linregress(x['frame'], x['Dist'])[0])
-data_agg['f_slope_min_dist_micron'] = data_slope
-# slope for minimal distance to edge; how distance to edge changes within the timelapse?
+data_agg['sDist'] = data_slope
+# Trend of change of locus distance to nuclear periphery
 
+data_sA = data.groupby(['file', 'particle']).apply(lambda x: linregress(x['frame'], x['A'])[0])
+data_agg['sA'] = data_sA
+# Trend of change of nuclear area
 
-data_slope_area = data.groupby(['file', 'particle']).apply(lambda x: linregress(x['frame'], x['area_micron'])[0])
-data_agg['f_slope_area_micron'] = data_slope_area
-# slope for nucleus area; how area changes within the timelapse?
+data_sP = data.groupby(['file', 'particle']).apply(lambda x: linregress(x['frame'], x['P'])[0])
+data_agg['sP'] = data_sP
+# Trend of change of nuclear perimeter
 
-data_slope_perimeter = data.groupby(['file', 'particle']).apply(lambda x: linregress(x['frame'],
-                                                                                     x['perimeter_au_norm'])[0])
-data_agg['f_slope_perimeter_au_norm'] = data_slope_perimeter
-# slope for nucleus perimeter
-
-data_SD_diff_xy_micron = data.groupby(['file', 'particle']).agg(SD_diff=('D', 'std'))
+data_SD_D = data.groupby(['file', 'particle']).agg(SD_diff=('D', 'std'))
 data_i = data.set_index(['file', 'particle'])
-data_i['SD_diff_xy_micron'] = data_SD_diff_xy_micron
+data_i['SD_D'] = data_SD_D
 data_i['MD'] = data_agg['MD']
-data_i['outliers2SD_diff_xy'] = np.where((data_i['D'] >
-                                          (data_i['MD'] + 2 * data_i['SD_diff_xy_micron'])), 1, 0)
-data_i['outliers3SD_diff_xy'] = np.where((data_i['D'] >
-                                          (data_i['MD'] + 3 * data_i['SD_diff_xy_micron'])), 1, 0)
-data_agg['f_outliers2SD_diff_xy'] = data_i.groupby(['file', 'particle']) \
-    .agg(f_outliers2SD_diff_xy=('outliers2SD_diff_xy', 'sum'))
-data_agg['f_outliers3SD_diff_xy'] = data_i.groupby(['file', 'particle']) \
-    .agg(f_outliers3SD_diff_xy=('outliers3SD_diff_xy', 'sum'))
-# is there a displacement larger than mean plus 2SD or 3SD (SD calculated for each dot, 29xy pairs) respectively
+data_i['out2sd'] = np.where((data_i['D'] > (data_i['MD'] + 2 * data_i['SD_D'])), 1, 0)
+data_i['out3sd'] = np.where((data_i['D'] > (data_i['MD'] + 3 * data_i['SD_D'])), 1, 0)
+data_agg['out2sd'] = data_i.groupby(['file', 'particle']).agg(out2sd=('out2sd', 'sum'))
+# Number of displacements 2SD longer than MD
+data_agg['out3sd'] = data_i.groupby(['file', 'particle']).agg(out3sd=('out3sd', 'sum'))
+# Number of displacements 3SD longer than MD
 
-data_sterile = data_agg.drop(['temp_sum_dX',
-                              'temp_sum_dY',
-                              'temp_min_Dist',
-                              'temp_max_Dist',
-                              'temp_beg_Dist',
-                              'temp_end_Dist',
-                              'file_mean_diff_xy_micron',
-                              'file_max_min_dist_micron',
-                              'temp_sum_D',
-                              ], axis=1)
-data_sterile.reset_index(inplace=True)
+data = data_agg.drop(['temp_sum_dX',
+                      'temp_sum_dY',
+                      'temp_min_Dist',
+                      'temp_max_Dist',
+                      'temp_beg_Dist',
+                      'temp_end_Dist',
+                      'temp_file_MD',
+                      'temp_file_max_Dist',
+                      'temp_sum_D',
+                      ], axis=1)
+data.reset_index(inplace=True)
+
+features = ['MD', 'MaxD', 'VarD', 'MA', 'MP', 'MDist', 'VarDist', 'rVarD', 'rVarDist',
+            'TD', 'Pers', 'ifFast', 'DistR', 'TDist', 'ifCentr', 'sDist', 'sA', 'sP', 'out2sd', 'out3sd']
