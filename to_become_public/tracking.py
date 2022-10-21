@@ -160,9 +160,9 @@ columns_raw = ['file',
                'min_dist_micron',
                ]
 
-canonical_fnames = {'diff_xy_micron': 'D',      # Locus displacement
-                    'area_micron': 'A',         # Nuclear area
-                    'perimeter_au_norm': 'P',   # Nuclear perimeter
+canonical_fnames = {'diff_xy_micron': 'D',      # Locus displacement, microns
+                    'area_micron': 'A',         # Nuclear area, square microns
+                    'perimeter_au_norm': 'P',   # Nuclear perimeter, arbitrary units
                     'min_dist_micron': 'Dist',  # Minimal distance from locus to nuclear rim, microns
                     }
 

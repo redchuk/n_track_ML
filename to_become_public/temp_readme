@@ -9,7 +9,7 @@ data_tabular
 
 scripts
     * tracking (serumconc from filename) + aggregate()
-    - data_preprocessing (feature engineering)
+    * data_preprocessing (feature engineering)
     baseline
     GBC (+ SHAP, should everything be packed in functions?)
     MLP (basic)

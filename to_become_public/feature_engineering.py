@@ -95,3 +95,5 @@ data.reset_index(inplace=True)
 
 features = ['MD', 'MaxD', 'VarD', 'MA', 'MP', 'MDist', 'VarDist', 'rVarD', 'rVarDist',
             'TD', 'Pers', 'ifFast', 'DistR', 'TDist', 'ifCentr', 'sDist', 'sA', 'sP', 'out2sd', 'out3sd']
+
+# todo: pack into a function to use in gbc
