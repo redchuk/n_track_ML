@@ -98,4 +98,4 @@ def get_data(path):
     features = ['MD', 'MaxD', 'VarD', 'MA', 'MP', 'MDist', 'VarDist', 'rVarD', 'rVarDist',
                 'TD', 'Pers', 'ifFast', 'DistR', 'TDist', 'ifCentr', 'sDist', 'sA', 'sP', 'out2sd', 'out3sd']
 
-    return data[features], data['serum']
+    return data[features], data['serum'], data
