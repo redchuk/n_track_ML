@@ -1,14 +1,19 @@
-import keras
 from pathlib import Path
 import numpy as np
+import shap
 import sklearn
 from sklearn.model_selection import StratifiedGroupKFold
+import tensorflow as tf
+# https://stackoverflow.com/questions/66814523/shap-deepexplainer-with-tensorflow-2-4-error
+#from tensorflow.compat.v1.keras.backend import get_session
+#tf.compat.v1.disable_v2_behavior() 
 
 from utility import parse_config
 from etl_tsc import load_data, get_X_dfX_y_groups, fsets
 
 import logging
 logger = logging.getLogger(__name__)
+
 
 '''
 This method was copied and modified from 'prepare_data' in InceptionTime/main.py:
@@ -102,13 +107,17 @@ def apply_standard_scaling(X,mean,std):
     logger.debug(Xt.shape)
 
     return Xt
-    
+
+
+## Look for a high-performing model, they explain why the average is so high.
+## But what is it about that split that makes it so successful?
+TARGET_ACCURACY = 0.98
 
 '''
 Single cross-validation run
 '''
 def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
-                     kernel_size, epochs=250, nb_classes=2):
+                     kernel_size, epochs=250, feature_names=None, nb_classes=2, return_model_eval=False):
     output_directory = output_it
     input_shape = X_inc.shape[1:]
     verbose = False
@@ -126,6 +135,9 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
     batch_size = int(min(X_inc.shape[0] / 10, 16))
     columns = ['accuracy','precision','recall','f1']
     scores = pd.DataFrame(columns=columns)
+
+    shap_vs_list = []
+    sX_test_list = []
 
     # One-hot encoding is a problem for StratifiedGroupKFold,
     # split using y_true
@@ -154,8 +166,8 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         #print(X_train_scaled.shape)
         #logger.debug("scaled2")
         #logger.debug(X_train_scaled)
-        
-        classifier = KerasClassifier(model=create_model, \
+       
+        classifier = KerasClassifier(model=create_model(), \
                                      epochs=epochs, \
                                      batch_size=batch_size, \
                                      verbose=verbose)
@@ -167,6 +179,8 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         pred = classifier.predict(X_val_scaled)
 
         truth = y_true[val_index]
+
+        sX_test_list.append(X_val_scaled)
         #print('truth')
         #print(truth)
         #print('pred')
@@ -182,20 +196,43 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         fold_rec = recall_score(truth, pred)
         fold_f1 = f1_score(truth, pred)
         scores.loc[len(scores)] = [fold_acc,fold_prc,fold_rec,fold_f1]
+
+        model_eval = None
+        # if accuracy is close enough to target,
+        # save model and SHAP values
+        print(fold_acc)
+        if return_model_eval and abs(TARGET_ACCURACY - fold_acc) < 0.02:
+            print("sufficiently accurate model found")
+        #if True:
+            # SHAP
+            shap.explainers._deep.deep_tf.op_handlers["AddV2"] = shap.explainers._deep.deep_tf.passthrough
+            explainer = shap.DeepExplainer((classifier.model_.layers[0].input, classifier.model_.layers[-1].output), X_train_scaled)
+            shap_values_deep = explainer.shap_values(X_val_scaled)
+
+            explainer = shap.GradientExplainer(classifier.model_, X_train_scaled)
+            #explainer.expected_value = explainer.expected_value[0]
+            shap_values_grad = explainer.shap_values(X_val_scaled)
+
+            model_eval = (classifier.model_, feature_names, shap_values_deep, shap_values_grad, X_val_scaled, pred, truth)
+            return pd.DataFrame(), model_eval
     
     scores['classifier'] = 'InceptionTime'
     scores['kernel_size'] = kernel_size
     scores['epochs'] = epochs
 
-    return scores
+    return scores, model_eval
 
 
 '''
 Repeat cross-validation
 '''
-def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10,job_id=''):
+def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10,job_id='', return_model_eval=False):
     logger.info(fset)
     X, dfX, y, groups, debugm, debugn = get_X_dfX_y_groups(data, fset)
+
+    # fset includes also class and file, get feature names for SHAP
+    feature_names = dfX.columns
+    print(feature_names)
 
     # prepare_data_for inception returns all, no split to train and test sets
     X_inc, y_inc, nb_classes, y_true, enc = prepare_data_for_inception(X,y)
@@ -207,12 +244,22 @@ def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, r
 
     scores_all = []
     for i in range(repeats):
+        print('repeat: %d/%d' % (i+1, repeats))
         logger.debug('repeat: %d/%d' % (i+1, repeats))
-        scores = inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
-                                  kernel_size=kernel_size, epochs=epochs, \
-                                  nb_classes=nb_classes)
+        scores, model_eval = inceptiontime_cv(cv, X_inc, y_inc, y_true, \
+                                              groups, output_it, \
+                                              kernel_size=kernel_size, epochs=epochs, \
+                                              feature_names=feature_names, \
+                                              nb_classes=nb_classes, \
+                                              return_model_eval=return_model_eval)
         scores['repeat'] = i+1
         scores_all.append(scores)
+
+        #print(return_model_eval)
+        #print(model_eval)
+        if return_model_eval and (model_eval != None):
+            return model_eval
+        
     scores = pd.concat(scores_all)
 
     scores['cv'] = str(cv)
