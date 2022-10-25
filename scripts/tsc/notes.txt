@@ -439,3 +439,21 @@ python create_sbatch.py --branch_i master --branch_n laxcat --job_name $job_name
 
 for s in $(ls sbatch/$job_name/*.sh); do sbatch $s; done;
 
+
+
+##
+## 2022-10-20
+##
+
+# installed Miniconda3 in /proj/groups/lmu/software
+# env 'tsc' now has everything, tensorflow, cuda, jinja, shap...
+# let's see if it works...
+
+job="test_proj_lmu"
+fset="f_dxy_mindist_angle_area"
+ts="20221020"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --test --branch_i master --branch_n laxcat --job_name $job_name --loop_epochs 2 50 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/$job_name/*.sh); do sbatch $s; done;
