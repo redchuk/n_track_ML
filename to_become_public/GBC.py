@@ -10,11 +10,9 @@ from matplotlib import pyplot as plt
 from to_become_public.feature_engineering import get_data  # todo: correct before publishing
 import shap
 
-
 X, y, indexed = get_data('to_become_public/tracking_output/data_47091baa.csv')
-cv_iterations = 5
+cv_iterations = 2
 gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
-
 
 ''' GBC '''
 
@@ -53,12 +51,10 @@ print('baseline performance: ' + str(np.mean(baselines)))  # todo: how to treat 
 best_max_depth = mpvts.max().idxmax()
 best_learning_rate = mpvts.max(axis=1).idxmax()
 
-
 ''' GBC SHAP '''
 
 ix = 0
 shap_repeats = pd.DataFrame()
-results = pd.DataFrame()
 
 for i in range(cv_iterations):
 
@@ -75,15 +71,15 @@ for i in range(cv_iterations):
         y_train = y.loc[train_idxs]
         y_test = y.loc[test_idxs]
 
-        sX_test_list.append(X_test)
-        s_id_list.append(idx_file_particle.loc[test_idxs])
-
         gbc = GradientBoostingClassifier(n_estimators=1000, learning_rate=best_learning_rate, max_depth=best_max_depth)
         gbc.fit(X_train, y_train)
 
         explainer = shap.TreeExplainer(gbc)
         shap_values = explainer.shap_values(X_test)
+
         shap_vs_list.append(shap_values)
+        sX_test_list.append(X_test)
+        s_id_list.append(idx_file_particle.loc[test_idxs])
 
         '''
         shap.summary_plot(shap_values,
@@ -99,6 +95,7 @@ for i in range(cv_iterations):
     all_splits_shap = np.concatenate(shap_vs_list)
     df_all_splits_shap = pd.DataFrame(all_splits_shap, columns=all_sX_test.columns).add_prefix('shap_')
     all_s_id = pd.concat(s_id_list)
+
     '''
     plt.title('Aggregated from 4CV splits')
     shap.summary_plot(all_splits_shap,
@@ -109,6 +106,7 @@ for i in range(cv_iterations):
                       plot_size=(10, 10),
                       )
     '''
+
     list_to_concat = [all_sX_test.reset_index(),
                       df_all_splits_shap.reset_index(),
                       all_s_id.reset_index()]
@@ -116,12 +114,10 @@ for i in range(cv_iterations):
     df_all = pd.concat(list_to_concat, axis=1) \
         .drop('index', axis=1).set_index(['file', 'particle']).add_prefix(str(i) + 'r_')
 
-    if shap_repeats.empty:
-        shap_repeats = df_all
-    else:
-        shap_repeats = shap_repeats.join(df_all)
+    shap_repeats = shap_repeats.join(df_all) if not shap_repeats.empty else df_all
 
 shap_averaged = pd.DataFrame()
+
 for i in df_all.columns:
     shap_averaged[i] = shap_repeats[shap_repeats.columns[range(df_all.columns.tolist().index(i),
                                                                len(shap_repeats.columns),
