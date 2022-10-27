@@ -11,42 +11,39 @@ from to_become_public.feature_engineering import get_data  # todo: correct befor
 import shap
 
 X, y, indexed = get_data('to_become_public/tracking_output/data_47091baa.csv')
-cv_iterations = 2
-gkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
+grid_iterations = 2  # todo: remove before flight
+cv_iterations = 2  # todo: remove before flight
+sgkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
+groups = indexed['file']
 
-''' GBC '''
+''' GBC grid search '''
 
 pivots = []
-grids = []
 baselines = []
 
-for i in range(cv_iterations):
-    b_param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
+for i in range(grid_iterations):
+    param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
                     'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30]}
 
-    grid_b_forest = GradientBoostingClassifier(n_estimators=1000)
-    b_grid_search = GridSearchCV(grid_b_forest, b_param_grid, cv=gkf, refit=False)
+    gbc = GradientBoostingClassifier(n_estimators=1000)
+    grid_search = GridSearchCV(gbc, param_grid, cv=sgkf, refit=False)
 
-    b_grid_search.fit(X, y, groups=indexed['file'])
-    grids.append(b_grid_search.cv_results_)
+    grid_search.fit(X, y, groups=groups)
 
-    b_pvt = pd.pivot_table(pd.DataFrame(b_grid_search.cv_results_),
+    pivots.append(pd.pivot_table(pd.DataFrame(grid_search.cv_results_),
                            values='mean_test_score',
                            index='param_learning_rate',
-                           columns='param_max_depth')
+                           columns='param_max_depth'))
 
-    pivots.append(b_pvt)
+    baseline = DecisionTreeClassifier(max_depth=1)
+    baselines.append(np.mean(cross_val_score(baseline, X, y, cv=sgkf, groups=groups)))
 
-    tree = DecisionTreeClassifier(max_depth=1)
-    baselines.append(np.mean(cross_val_score(tree, X, y, cv=gkf, groups=indexed['file'])))
-
-mpvts = pd.concat(pivots).mean(level=0)
-sns.heatmap(mpvts, annot=True)
-plt.title(str(cv_iterations) + ' cv reps')
+mean_accuracy = pd.concat(pivots).mean(level=0)
+sns.heatmap(mean_accuracy, annot=True) # todo: how to treat plotting?
 plt.show()
 plt.close()
 
-print('baseline performance: ' + str(np.mean(baselines)))  # todo: how to treat printing?
+print('Baseline performance: ' + str(np.mean(baselines)))  # todo: how to treat printing?
 
 best_max_depth = mpvts.max().idxmax()
 best_learning_rate = mpvts.max(axis=1).idxmax()
@@ -57,15 +54,14 @@ ix = 0
 shap_repeats = pd.DataFrame()
 
 for i in range(cv_iterations):
-
+    print('shap iter' + str(i))  # todo: remove before flight
     shap_vs_list = []
     sX_test_list = []
     s_id_list = []
 
-    groups = indexed['file']
     idx_file_particle = indexed[['file', 'particle']]
 
-    for train_idxs, test_idxs in gkf.split(X, y, groups):
+    for train_idxs, test_idxs in sgkf.split(X, y, groups):
         X_train = X.loc[train_idxs]
         X_test = X.loc[test_idxs]
         y_train = y.loc[train_idxs]
