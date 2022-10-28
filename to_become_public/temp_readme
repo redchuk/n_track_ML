@@ -10,7 +10,7 @@ data_tabular
 scripts
     * tracking (serumconc from filename) + aggregate()
     * data_preprocessing (feature engineering)
-    * GBC+baseline+SHAP
+    * GBC+baseline+SHAP (printing, plotting, how many iterations?)
     MLP (basic)
     InceptionTime (will it be directory?)
 
