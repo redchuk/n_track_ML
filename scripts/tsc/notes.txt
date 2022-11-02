@@ -439,3 +439,88 @@ python create_sbatch.py --branch_i master --branch_n laxcat --job_name $job_name
 
 for s in $(ls sbatch/$job_name/*.sh); do sbatch $s; done;
 
+
+
+##
+## 2022-10-20
+##
+
+# installed Miniconda3 in /proj/groups/lmu/software
+# env 'tsc' now has everything, tensorflow, cuda, jinja, shap...
+# let's see if it works...
+
+job="test_proj_lmu"
+fset="f_dxy_mindist_angle_area"
+ts="20221020"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --test --branch_i master --branch_n laxcat --job_name $job_name --loop_epochs 2 50 2 --options "--fset $fset --kernel_size=20 --repeats=30" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for s in $(ls sbatch/$job_name/*.sh); do sbatch $s; done;
+
+
+##
+## 2022-10-25
+##
+
+# test saving shap values
+
+job="test_save_shap"
+fset="f_dxy_mindist_angle_area"
+ts="20221027"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --test --branch_i master --branch_n laxcat --job_name $job_name --options "--fset $fset --kernel_size=20 --epochs=3 --repeats=3 --save_shap_values" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+
+
+##
+## 2022-11-01
+##
+
+# mass-produce shap values
+
+# only 1 repeat in per job
+
+job="save_shap"
+fset="f_dxy_mindist_angle_area"
+ts="20221101"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --test --branch_i master --branch_n laxcat --job_name $job_name --options "--fset $fset --kernel_size=20 --epochs=20 --repeats=1 --save_shap_values" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for i in {1..45}
+do
+echo $i
+sbatch sbatch/save_shap_f_dxy_mindist_angle_area_20221101/sbatch_save_shap_f_dxy_mindist_angle_area_20221101.sh
+done
+
+
+##
+## 2022-11-02
+##
+
+# test 
+
+job="test_save_shap"
+fset="f_dxy_mindist_angle_area"
+ts="20221102"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --test --branch_i master --branch_n laxcat --job_name $job_name --options "--fset $fset --kernel_size=20 --epochs=2 --repeats=1 --save_shap_values" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+# run after commit and push
+
+job="save_shap"
+fset="f_dxy_mindist_angle_area"
+ts="20221102"
+job_name="${job}_${fset}_${ts}"
+echo $job_name
+python create_sbatch.py --branch_i master --branch_n proj_group_lmu --job_name $job_name --options "--fset $fset --kernel_size=20 --epochs=20 --repeats=1 --save_shap_values" --sbatch_dir sbatch/$job_name --paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml
+
+for i in {1..50}
+do
+echo $i
+sbatch sbatch/save_shap_f_dxy_mindist_angle_area_20221102/sbatch_save_shap_f_dxy_mindist_angle_area_20221102.sh
+done
+

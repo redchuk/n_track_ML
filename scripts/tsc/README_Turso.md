@@ -61,6 +61,17 @@ pip install scikeras
 python -m ipykernel install --user --name tsc_jupyter_shap --display-name "Python (tsc_jupyter_shap)"
 ```
 
+All-in-one env in LMU project folder:
+```
+mamba create -n tsc
+conda activate tsc
+CONDA_CUDA_OVERRIDE="11.2" mamba install cudatoolkit==11.2 jinja2 jupyterlab keras matplotlib numpy pandas pip pyyaml scikit-learn scipy==1.4.1 shap==0.41.0 sktime==0.10.1 tensorflow==2.7.0 -c anaconda -c conda-forge
+pip install scikeras
+pip install click
+python -m ipykernel install --user --name tsc --display-name "Python (tsc)"
+
+```
+
 ## Workflow
 
 ### Create sbatch scripts
