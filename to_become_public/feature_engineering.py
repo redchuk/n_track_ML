@@ -3,8 +3,7 @@ import numpy as np
 from scipy.stats import linregress
 
 
-def get_data(path):
-    data = pd.read_csv(path)
+def get_data(data):
 
     data['dX'] = data['x_micron'].diff()
     data['dY'] = data['y_micron'].diff()
