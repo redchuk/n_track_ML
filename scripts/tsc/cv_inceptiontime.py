@@ -117,7 +117,7 @@ TARGET_ACCURACY = 0.98
 Single cross-validation run
 '''
 def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
-                     kernel_size, epochs=250, feature_names=None, nb_classes=2, return_model_eval=False):
+                     kernel_size, epochs=250, feature_names=None, nb_classes=2, return_model_eval=False, save_shap_values=False):
     output_directory = output_it
     input_shape = X_inc.shape[1:]
     verbose = False
@@ -136,9 +136,11 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
     columns = ['accuracy','precision','recall','f1']
     scores = pd.DataFrame(columns=columns)
 
-    shap_vs_list = []
-    sX_test_list = []
-
+    shap_deep_list = []
+    shap_grad_list = []
+    X_test_list = []
+    accuracy_list = []
+    
     # One-hot encoding is a problem for StratifiedGroupKFold,
     # split using y_true
     for train_index,val_index in cv.split(X_inc,y_true,groups):
@@ -180,7 +182,6 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
 
         truth = y_true[val_index]
 
-        sX_test_list.append(X_val_scaled)
         #print('truth')
         #print(truth)
         #print('pred')
@@ -203,30 +204,53 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
         print(fold_acc)
         if return_model_eval and abs(TARGET_ACCURACY - fold_acc) < 0.02:
             print("sufficiently accurate model found")
-        #if True:
-            # SHAP
-            shap.explainers._deep.deep_tf.op_handlers["AddV2"] = shap.explainers._deep.deep_tf.passthrough
-            explainer = shap.DeepExplainer((classifier.model_.layers[0].input, classifier.model_.layers[-1].output), X_train_scaled)
-            shap_values_deep = explainer.shap_values(X_val_scaled)
-
-            explainer = shap.GradientExplainer(classifier.model_, X_train_scaled)
-            #explainer.expected_value = explainer.expected_value[0]
-            shap_values_grad = explainer.shap_values(X_val_scaled)
-
-            model_eval = (classifier.model_, feature_names, shap_values_deep, shap_values_grad, X_val_scaled, pred, truth)
-            return pd.DataFrame(), model_eval
+            (shap_deep, shap_grad) = get_shap_values(classifier.model_, \
+                                                     X_train_scaled, \
+                                                     X_val_scaled)
     
+            model_eval = (classifier.model_, feature_names, shap_deep, shap_grad, X_val_scaled, pred, truth)
+            return pd.DataFrame(), model_eval, shap_lists
+
+        if save_shap_values:
+            (shap_deep, shap_grad) = get_shap_values(classifier.model_, \
+                                                     X_train_scaled, \
+                                                     X_val_scaled)
+            shap_deep_list.append(shap_deep[0])
+            shap_grad_list.append(shap_grad[0])
+            X_test_list.append(X_val_scaled)
+            accuracy_list.append(fold_acc)
+               
     scores['classifier'] = 'InceptionTime'
     scores['kernel_size'] = kernel_size
     scores['epochs'] = epochs
 
-    return scores, model_eval
+    print("len(shap_deep_list):%d" % len(shap_deep_list))
+    print("len(shap_grad_list):%d" % len(shap_grad_list))
+    
+    shap_lists = (shap_deep_list, shap_grad_list, X_test_list, accuracy_list)
 
+    return scores, model_eval, shap_lists
+
+
+def get_shap_values(model_, X_train, X_test):
+    # SHAP
+    shap.explainers._deep.deep_tf.op_handlers["AddV2"] = shap.explainers._deep.deep_tf.passthrough
+    explainer = shap.DeepExplainer((model_.layers[0].input, \
+                                    model_.layers[-1].output), \
+                                   X_train)
+    shap_values_deep = explainer.shap_values(X_test)
+
+    explainer = shap.GradientExplainer(model_, X_train)
+    #explainer.expected_value = explainer.expected_value[0]
+    shap_values_grad = explainer.shap_values(X_test)
+
+    return (shap_values_deep, shap_values_grad)
+   
 
 '''
 Repeat cross-validation
 '''
-def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10,job_id='', return_model_eval=False):
+def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, repeats=10,job_id='', return_model_eval=False, save_shap_values=False):
     logger.info(fset)
     X, dfX, y, groups, debugm, debugn = get_X_dfX_y_groups(data, fset)
 
@@ -243,15 +267,20 @@ def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, r
     cv = StratifiedGroupKFold(n_splits=4, shuffle=True)
 
     scores_all = []
+    shap_lists_all = []
     for i in range(repeats):
         print('repeat: %d/%d' % (i+1, repeats))
         logger.debug('repeat: %d/%d' % (i+1, repeats))
-        scores, model_eval = inceptiontime_cv(cv, X_inc, y_inc, y_true, \
-                                              groups, output_it, \
-                                              kernel_size=kernel_size, epochs=epochs, \
-                                              feature_names=feature_names, \
-                                              nb_classes=nb_classes, \
-                                              return_model_eval=return_model_eval)
+        cv_output = inceptiontime_cv(cv, X_inc, y_inc, y_true, \
+                                     groups, output_it, \
+                                     kernel_size=kernel_size, epochs=epochs, \
+                                     feature_names=feature_names, \
+                                     nb_classes=nb_classes, \
+                                     return_model_eval=return_model_eval, \
+                                     save_shap_values=save_shap_values)
+        scores, model_eval, shap_lists = cv_output
+        shap_lists_all.append(shap_lists)
+
         scores['repeat'] = i+1
         scores_all.append(scores)
 
@@ -269,8 +298,9 @@ def inceptiontime_cv_repeat(data, output_it, fset, kernel_size=20, epochs=250, r
     scores['job_id'] = job_id
 
     logger.info(f"inceptiontime_cv_repeat: %s feature_set:%s, kernel_size:%d, epochs:%d, accuracy:%f0.00" % (str(cv), fset, kernel_size, epochs, scores['accuracy'].mean()))
-    
-    return scores
+
+    print("len(shap_lists_all):%d" % len(shap_lists_all))
+    return scores, shap_lists_all
 
 
 import click
@@ -285,12 +315,12 @@ import time
 @click.option("--kernel_size", type=int, default=20)
 @click.option("--epochs", type=int, default=100)
 @click.option("--fset", type=click.Choice(fsets.keys()), default="f_mot_morph")
-@click.option("--loop_fsets", is_flag=True, default=False)
 @click.option("--repeats", type=int, default=20)
+@click.option("--save_shap_values", is_flag=True, default=False)
 @click.option("--job_name", type=str, default="tsc_it")
 @click.option("--job_id", type=str)
 @click.option("--now", type=str)
-def cv_inceptiontime(inceptiontime_dir, paths, kernel_size, epochs, fset, loop_fsets, repeats, job_name, job_id, now):
+def cv_inceptiontime(inceptiontime_dir, paths, kernel_size, epochs, fset, repeats, save_shap_values, job_name, job_id, now):
     paths = parse_config(paths)
 
     log_dir = Path(paths["log"]["tsc"]) / job_name / now
@@ -329,6 +359,8 @@ def cv_inceptiontime(inceptiontime_dir, paths, kernel_size, epochs, fset, loop_f
     output_it = Path(paths["output"]["it"]) / job_id
     output_it.mkdir(parents=True, exist_ok=True)
     output_it = str(output_it) + "/"
+    output_shap = Path(paths["output"]["shap"]) / job_name / now / job_id
+    output_shap.mkdir(parents=True, exist_ok=True)
 
     # read the data 
     data_dir = paths["data"]["dir"]
@@ -340,29 +372,45 @@ def cv_inceptiontime(inceptiontime_dir, paths, kernel_size, epochs, fset, loop_f
 
     tic = time.perf_counter()
     
-    scores_all = []
-
-    if loop_fsets:
-        logger.info("loop feature sets")
-
-        for f in fsets.keys():
-            scores = inceptiontime_cv_repeat(data, output_it, f, kernel_size=kernel_size, epochs=epochs, repeats=repeats, job_id=job_id)
-            scores_all.append(scores)
-
-    else:
-        logger.info("single fset")
-        scores = inceptiontime_cv_repeat(data, output_it, fset, kernel_size=kernel_size, epochs=epochs, repeats=repeats, job_id=job_id)
-        scores_all.append(scores)
+    logger.info("single fset")
+    scores, shap_lists_all = inceptiontime_cv_repeat(data, output_it, fset, kernel_size=kernel_size, epochs=epochs, repeats=repeats, save_shap_values=save_shap_values, job_id=job_id)
         
     toc = time.perf_counter()
     logger.info(f"Finished processing in {(toc-tic) / 60:0.1f} minutes.")
             
-    scores = pd.concat(scores_all)
-
     scores_file = "cv_" + job_name + "_k" + str(kernel_size) + "_e" + str(epochs) + "_" + now + ".csv"
     scores_file = output_cv / scores_file
     scores.to_csv(scores_file, index=False)
     logger.info("Wrote scores to " + str(scores_file))
+
+
+    if save_shap_values:
+        shap2npy(fset, shap_lists_all, output_shap)
+
+
+def shap2npy(fset, shap_lists_all, output_shap):
+    shap_deep_list = []
+    shap_grad_list = []
+    X_test_list = []
+    accuracy_list = []
+
+    # loop over repetitions
+    for shap_lists in shap_lists_all:
+        # each repetition produced a tuple of lists
+        shapd, shapg, X_test, acc = shap_lists
+        
+        shap_deep_list.extend(shapd)
+        shap_grad_list.extend(shapg)
+        X_test_list.extend(X_test)
+        accuracy_list.extend(acc)
+
+    np.save(output_shap / 'shap_deep_list.npy', shap_deep_list)
+    np.save(output_shap / 'shap_grad_list.npy', shap_grad_list)
+    np.save(output_shap / 'X_test_list.npy', X_test_list)
+    np.save(output_shap / 'accuracy_list.npy', accuracy_list)
+    np.save(output_shap / 'features.npy', fsets[fset])
+        
+        
 
 if __name__ == "__main__":
     cv_inceptiontime()
