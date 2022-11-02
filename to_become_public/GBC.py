@@ -12,8 +12,8 @@ import shap
 
 path = 'to_become_public/tracking_output/data_47091baa.csv'# todo: correct before publishing
 data_from_csv = pd.read_csv(path)
-
 X, y, indexed = get_data(data_from_csv)
+
 grid_iterations = 10
 cv_iterations = 10
 sgkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
