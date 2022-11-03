@@ -211,14 +211,15 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
             model_eval = (classifier.model_, feature_names, shap_deep, shap_grad, X_val_scaled, pred, truth)
             return pd.DataFrame(), model_eval, shap_lists
 
+        X_test_list.append(X_val_scaled)
+        accuracy_list.append(fold_acc)
         if save_shap_values:
             (shap_deep, shap_grad) = get_shap_values(classifier.model_, \
                                                      X_train_scaled, \
                                                      X_val_scaled)
             shap_deep_list.append(shap_deep[0])
             shap_grad_list.append(shap_grad[0])
-            X_test_list.append(X_val_scaled)
-            accuracy_list.append(fold_acc)
+
                
     scores['classifier'] = 'InceptionTime'
     scores['kernel_size'] = kernel_size
@@ -384,8 +385,8 @@ def cv_inceptiontime(inceptiontime_dir, paths, kernel_size, epochs, fset, repeat
     logger.info("Wrote scores to " + str(scores_file))
 
 
-    if save_shap_values:
-        shap2npy(fset, shap_lists_all, output_shap)
+    # save X_test and accuracy lists, even if SHAP values are not calculated
+    shap2npy(fset, shap_lists_all, output_shap)
 
 
 def shap2npy(fset, shap_lists_all, output_shap):
