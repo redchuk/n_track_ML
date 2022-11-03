@@ -140,6 +140,7 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
     shap_grad_list = []
     X_test_list = []
     accuracy_list = []
+    train_index_list = []
     
     # One-hot encoding is a problem for StratifiedGroupKFold,
     # split using y_true
@@ -211,14 +212,15 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
             model_eval = (classifier.model_, feature_names, shap_deep, shap_grad, X_val_scaled, pred, truth)
             return pd.DataFrame(), model_eval, shap_lists
 
-        X_test_list.append(X_val_scaled)
         accuracy_list.append(fold_acc)
+        train_index_list.append(train_index)
         if save_shap_values:
             (shap_deep, shap_grad) = get_shap_values(classifier.model_, \
                                                      X_train_scaled, \
                                                      X_val_scaled)
             shap_deep_list.append(shap_deep[0])
             shap_grad_list.append(shap_grad[0])
+            X_test_list.append(X_val_scaled)
 
                
     scores['classifier'] = 'InceptionTime'
@@ -228,7 +230,7 @@ def inceptiontime_cv(cv, X_inc, y_inc, y_true, groups, output_it, \
     print("len(shap_deep_list):%d" % len(shap_deep_list))
     print("len(shap_grad_list):%d" % len(shap_grad_list))
     
-    shap_lists = (shap_deep_list, shap_grad_list, X_test_list, accuracy_list)
+    shap_lists = (shap_deep_list, shap_grad_list, X_test_list, accuracy_list, train_index_list)
 
     return scores, model_eval, shap_lists
 
@@ -394,21 +396,24 @@ def shap2npy(fset, shap_lists_all, output_shap):
     shap_grad_list = []
     X_test_list = []
     accuracy_list = []
+    train_index_list = []
 
     # loop over repetitions
     for shap_lists in shap_lists_all:
         # each repetition produced a tuple of lists
-        shapd, shapg, X_test, acc = shap_lists
+        shapd, shapg, X_test, acc, train = shap_lists
         
         shap_deep_list.extend(shapd)
         shap_grad_list.extend(shapg)
         X_test_list.extend(X_test)
         accuracy_list.extend(acc)
+        train_index_list.extend(train)
 
     np.save(output_shap / 'shap_deep_list.npy', shap_deep_list)
     np.save(output_shap / 'shap_grad_list.npy', shap_grad_list)
     np.save(output_shap / 'X_test_list.npy', X_test_list)
     np.save(output_shap / 'accuracy_list.npy', accuracy_list)
+    np.save(output_shap / 'train_index_list.npy', train_index_list)
     np.save(output_shap / 'features.npy', fsets[fset])
         
         
