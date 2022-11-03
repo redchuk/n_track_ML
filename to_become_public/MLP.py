@@ -35,7 +35,6 @@ def sh_plot(shap_values, feature_values, feature_names, title=''):
                       sort=False,
                       color_bar=False,
                       plot_size=(10, 10),
-                      title=title
                       )
 
 
@@ -91,14 +90,18 @@ for i in range(cv_iterations):
         X_test_splits.append(X_test)
         idx_splits.append(idx_file_particle.loc[test_idxs])
 
-        print_sh = sh_plot(shap_values[0], X_test, X.columns) if verbose else False
+        if verbose:
+            plt.title('Single split')
+            sh_plot(shap_values[0], X_test, X.columns)
 
     all_X_test_splits = pd.concat(X_test_splits)
     all_shap_splits = np.concatenate(shap_splits)
     all_shap_splits_df = pd.DataFrame(all_shap_splits, columns=all_X_test_splits.columns).add_prefix('shap_')
     all_idx_splits = pd.concat(idx_splits)
 
-    print_sh = sh_plot(all_shap_splits, all_X_test_splits, X.columns, title='4CV splits') if verbose else False
+    if verbose:
+        plt.title('Aggregated from 4CV splits')
+        sh_plot(all_shap_splits, all_X_test_splits, X.columns)
 
     list_to_concat = [all_X_test_splits.reset_index(),
                       all_shap_splits_df.reset_index(),
