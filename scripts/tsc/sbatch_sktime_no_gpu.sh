@@ -20,15 +20,26 @@
 
 
 # Load the Conda module
-module use /proj/hajaalin/LMUModules/
+module use /proj/hajaalin/Settings/LMUModules/
 module --ignore-cache load Miniconda3/4.11.0
 source activate tsc
+conda env list
 
 which python
 
-cmd="srun python /proj/hajaalin/Projects/n_track_ML/scripts/tsc/cv_sktime.py --config_paths /proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml --config_tsc /proj/hajaalin/Projects/n_track_ML/scripts/tsc/config.yml"
+echo "Starting..."
+date
+
+PROG="/proj/hajaalin/Projects/n_track_ML/scripts/tsc/cv_sktime.py"
+PATHS="/proj/hajaalin/Projects/n_track_ML/scripts/tsc/paths.yml"
+CONF="/proj/hajaalin/Projects/n_track_ML/scripts/tsc/conf/config.yml"
+
+cmd="srun python ${PROG} --paths ${PATHS} --config ${CONF} --job_id=$SLURM_JOBID"
 echo ${cmd}
 ${cmd}
+
+echo "Done."
+date
 
 
 

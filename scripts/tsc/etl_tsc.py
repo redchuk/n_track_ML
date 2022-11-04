@@ -37,19 +37,6 @@ def initial_filtering(data):
     return data
 
 
-def normalize_xy(data):
-    # add x and y max per time series
-    data = data.join(data.groupby(['file','particle'])['x'].max(), on=['file','particle'], rsuffix='_max')
-    data = data.join(data.groupby(['file','particle'])['y'].max(), on=['file','particle'], rsuffix='_max')
-    data = data.join(data.groupby(['file','particle'])['x'].min(), on=['file','particle'], rsuffix='_min')
-    data = data.join(data.groupby(['file','particle'])['y'].min(), on=['file','particle'], rsuffix='_min')
-
-    # normalize x and y
-    data['x_norm'] = data['x'] - data['x_min']
-    data['y_norm'] = data['y'] - data['y_min']
-
-    return data
-
 
 def create_instance_index(data):
     # combine file and particle columns for using as instance index later on
@@ -131,6 +118,29 @@ fsets = {}
 fsets['f_mot'] = ['x','y','min_dist_pxs','serum_conc_percent','file']
 fsets['f_mot_morph'] = fsets['f_mot'] + ['area_micron','perimeter_au']
 fsets['f_mot_morph_dyn'] = fsets['f_mot'] + ['dxy','angle','dangle','darea','dperimeter']
+fsets['f_mot_morph_dyn_2'] = fsets['f_mot_morph'] + ['dxy','angle','dangle','darea','dperimeter']
+fsets['f_x'] = ['x','serum_conc_percent','file']
+fsets['f_y'] = ['y','serum_conc_percent','file']
+fsets['f_xy'] = ['x','y','serum_conc_percent','file']
+fsets['f_mindist'] = ['min_dist_pxs','serum_conc_percent','file']
+fsets['f_morph'] = ['area_micron', 'perimeter_au','serum_conc_percent','file']
+fsets['f_area'] = ['area_micron','serum_conc_percent','file']
+fsets['f_perim'] = ['perimeter_au','serum_conc_percent','file']
+
+# Discussion with Taras on 20220930: drop x and y, dxy is enough
+fsets['f_dxy'] = ['dxy','serum_conc_percent','file']
+fsets['f_dxy_angle'] = fsets['f_dxy'] + ['angle','dangle']
+fsets['f_dxy_angle_morph'] = fsets['f_dxy_angle'] + ['area_micron','perimeter_au']
+fsets['f_dxy_angle_morphd'] = fsets['f_dxy_angle_morph'] + ['darea','dperimeter']
+
+# forgot mindist...
+fsets['f_dxy_mindist'] = fsets['f_dxy'] + ['min_dist_pxs']
+fsets['f_dxy_mindist_angle'] = fsets['f_dxy_mindist'] + ['angle','dangle']
+fsets['f_dxy_mindist_angle_morph'] = fsets['f_dxy_mindist_angle'] + ['area_micron','perimeter_au']
+
+# try also without perimeter (might be redundant with area)"
+fsets['f_dxy_angle_area'] = fsets['f_dxy_angle'] + ['area_micron']
+fsets['f_dxy_mindist_angle_area'] = fsets['f_dxy_mindist_angle'] + ['area_micron']
 
 #print(fsets['f_mot_morph_dyn'])
 
@@ -138,7 +148,6 @@ fsets['f_mot_morph_dyn'] = fsets['f_mot'] + ['dxy','angle','dangle','darea','dpe
 def get_X_dfX_y_groups(data, f_set_name):
     data = data.copy()
     data = initial_filtering(data)
-    #data = normalize_xy(data)
     data = create_instance_index(data)
     data = add_nframes_col(data)
     debug0 = data.copy()
@@ -164,6 +173,7 @@ def get_X_dfX_y_groups(data, f_set_name):
     # read group name from the last element of the series
     # index of first element might be 0,1 or 2, depending on how many elements
     # have been dropped because of adding features with df.diff()
+    print(datan.columns)
     groups = datan['file'].apply(lambda x: x.iloc[-1])
     datan = datan.drop(columns=['file'])
     

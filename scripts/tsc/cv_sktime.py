@@ -1,5 +1,6 @@
 import numpy as np
 import sklearn
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import GroupKFold
@@ -11,6 +12,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=sklearn.exceptions.UndefinedMetricWarning)
 
 from etl_tsc import load_data, get_X_dfX_y_groups, fsets
+from normalization import get_standard_scaling, apply_standard_scaling
 
 #logger = None
 
@@ -24,6 +26,41 @@ def format_scores_df(scores):
     #print(scores.std())
     return scores
 
+
+def cv_single_with_norm(classifier, X, y, groups, cv):
+    columns = ['accuracy','precision','recall','f1']
+    scores = pd.DataFrame(columns=columns)
+    for train_index,val_index in cv.split(X,y,groups):
+        # scale training data to mean,std 0,1
+        mean,std = get_standard_scaling(X[train_index])
+        logger.debug("mean:")
+        logger.debug(mean)
+        logger.debug("std:")
+        logger.debug(std)
+        X_train_scaled = apply_standard_scaling(X[train_index],mean,std)
+        
+        classifier.fit(X_train_scaled, y[train_index])
+
+        # scale validation data to mean,std 0,1
+        X_val_scaled = apply_standard_scaling(X[val_index],mean,std)
+        pred = classifier.predict(X_val_scaled)
+
+        truth = y[val_index]
+        #print('truth')
+        #print(truth)
+        #print('pred')
+        #print(pred)
+
+        # get fold accuracy and append
+        fold_acc = accuracy_score(truth, pred)
+        fold_prc = precision_score(truth, pred)
+        fold_rec = recall_score(truth, pred)
+        fold_f1 = f1_score(truth, pred)
+        scores.loc[len(scores)] = [fold_acc,fold_prc,fold_rec,fold_f1]
+
+    return scores
+    
+    
 def cv_sgkf(classifier, X, y, groups, repeats=10):
     cv = StratifiedGroupKFold(n_splits=4, shuffle=True)
     #print(classifier)
@@ -31,13 +68,15 @@ def cv_sgkf(classifier, X, y, groups, repeats=10):
 
     scores_all = []
     for i in range(repeats):
-        #cv = StratifiedGroupKFold(n_splits=4, shuffle=True)
-        scores = cross_validate(classifier, X, y, cv=cv, scoring=scoring, groups=groups)
-        scores_all.append(pd.DataFrame.from_dict(scores))
+        scores = cv_single_with_norm(classifier, X, y, groups, cv)
+        #scores = cross_validate(classifier, X, y, cv=cv, scoring=scoring, groups=groups)
+        #scores_all.append(pd.DataFrame.from_dict(scores))
+        scores_all.append(scores)
     
     scores = pd.concat(scores_all)
-    scores = format_scores_df(scores)
-    score = scores['cv'] = 'StratifiedGroupKFold'
+    #scores = format_scores_df(scores)
+    scores['cv'] = str(cv)
+    
     return scores
 
 
@@ -104,8 +143,15 @@ def run_rocket(data, repeats=20):
         rocket = Rocket()  # by default, ROCKET uses 10,000 kernels
         rocket.fit(dfX)
         X_transform = rocket.transform(dfX)
+        logger.debug("run_rocket: shape X_transform: " + str(X_transform.shape))
+        X_np = X_transform.to_numpy()
+        print("X_transform")
+        print(X_transform)
+        logger.debug("run_rocket: shape X_np: " + str(X_np.shape))
+        print("X_np")
+        print(X_np)
 
-        scores = cv_sgkf(classifier, X_transform, y, groups, repeats=repeats)
+        scores = cv_sgkf(classifier, X_np, y, groups, repeats=repeats)
         scores['classifier'] = 'Rocket'
         scores['fset'] = fset
         scores_all.append(scores)
@@ -142,26 +188,27 @@ from utility import parse_config, set_logger
 
 @click.command()
 #@click.argument("config_file", type=str, default="config.yml")
-@click.option("--config_paths", type=str, default="paths.yml")
-@click.option("--config_tsc", type=str, default="config.yml")
-@click.option("--ext", type=str, default=".csv")
-def cv_sktime(config_paths, config_tsc, ext):
-    paths = parse_config(config_paths)
-    config = parse_config(config_tsc)
+@click.option("--paths", type=str, default="paths.yml")
+@click.option("--config", type=str, default="config.yml")
+@click.option("--job_name", type=str, default="cv_sktime")
+@click.option("--job_id", type=str)
+def cv_sktime(paths, config, job_name, job_id):
+    paths = parse_config(paths)
+    config = parse_config(config)
 
     log_dir = paths["log"]["tsc"]
     
     # configure logger
     global logger
-    logger = set_logger(log_dir + "/cv_sktime.log")
+    logger = set_logger(log_dir + "/" + job_name + ".log")
 
     # Load config from config file
-    logger.info(f"Load config from {config_tsc}")
+    logger.info(f"Load config from {config}")
 
 
     # read the data 
-    data_dir = paths['data']
-    raw_data_file = config["etl"]["raw_data_file"]
+    data_dir = paths["data"]["dir"]
+    raw_data_file = paths["data"]["raw_data_file"]
 
     data = load_data(Path(data_dir) / raw_data_file)
     logger.info('Loaded data shape: ' + str(data.shape))
@@ -183,9 +230,12 @@ def cv_sktime(config_paths, config_tsc, ext):
 
     # store output
     output_dir = paths["output"]["cv"]
-    output_csv = config["output"]["csv"]
+    output_csv = job_name + "-" + job_id + ".csv"
+    output_csv = Path(output_dir) / output_csv
+    
     scores = pd.concat(scores_all)
-    scores.to_csv(Path(output_dir) / output_csv, index=False)
+    scores.to_csv(output_csv, index=False)
+    logger.info("Wrote scores to " + str(output_csv))
     
     
 if __name__ == "__main__":
