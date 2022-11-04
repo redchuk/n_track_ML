@@ -5,7 +5,7 @@ src:
 output:
   cv: "/proj/hajaalin/Projects/n_track_ML/output/cross-validation"
   it: "/wrk/users/hajaalin/output/TSC/InceptionTime/"
-  shap: "/proj/group/lmu/projects/n_track_ML/output/shap"
+  shap: "/wrk/group/lmu/projects/n_track_ML/output/shap"
 
 log:
   tsc: "/proj/hajaalin/Projects/n_track_ML/output/log"
