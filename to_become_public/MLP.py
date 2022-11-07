@@ -28,7 +28,7 @@ groups = indexed['file']
 idx_file_particle = indexed[['file', 'particle']]
 
 
-def sh_plot(shap_values, feature_values, feature_names, title=''):
+def sh_plot(shap_values, feature_values, feature_names):
     shap.summary_plot(shap_values,
                       feature_values,
                       feature_names=feature_names,

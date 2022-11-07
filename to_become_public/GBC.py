@@ -14,8 +14,9 @@ path = 'to_become_public/tracking_output/data_47091baa.csv'# todo: correct befor
 data_from_csv = pd.read_csv(path)
 X, y, indexed = get_data(data_from_csv)
 
-grid_iterations = 10
-cv_iterations = 10
+verbose = True
+grid_iterations = 2
+cv_iterations = 2
 sgkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
 groups = indexed['file']
 idx_file_particle = indexed[['file', 'particle']]
@@ -90,15 +91,18 @@ for i in range(cv_iterations):
         X_test_splits.append(X_test)
         idx_splits.append(idx_file_particle.loc[test_idxs])
 
-        sh_plot(shap_values, X_test, X.columns)
+        if verbose:
+            plt.title('Single split')
+            sh_plot(shap_values, X_test, X.columns)
 
     all_X_test_splits = pd.concat(X_test_splits)
     all_shap_splits = np.concatenate(shap_splits)
     all_shap_splits_df = pd.DataFrame(all_shap_splits, columns=all_X_test_splits.columns).add_prefix('shap_')
     all_idx_splits = pd.concat(idx_splits)
 
-    plt.title('Aggregated from 4CV splits')
-    sh_plot(all_shap_splits, all_X_test_splits, X.columns)
+    if verbose:
+        plt.title('Aggregated from 4CV splits')
+        sh_plot(all_shap_splits, all_X_test_splits, X.columns)
 
     list_to_concat = [all_X_test_splits.reset_index(),
                       all_shap_splits_df.reset_index(),
