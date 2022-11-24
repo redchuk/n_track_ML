@@ -22,8 +22,10 @@ shift insert  		paste in putty
 srun --interactive -c4 --mem=4G -t04:00:00 -pgpu-oversub -Mukko --pty bash		starts an interactive session on ukko cluster
 \\turso-fs.cs.helsinki.fi\								                        open cluster dirs from win
 
-
-
+----------------------------------
+import sys          instead of modifying the script every time for interactive session?
+sys.argv[1]         no spaces arguments from system command line (python filename.py argument1 ...)
+argparse            alternative
 
 -----------------------------------
 Hi Taras,
