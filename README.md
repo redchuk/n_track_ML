@@ -7,7 +7,7 @@ Takes 4D images of chromosome loci in live cells as input. Next, images are segm
 Collected data is used to train the machine learning models to distinguish different experimental conditions (whether the cells are in serum or starved). Finally, the explanation of ML models output is used to extract biological meaning from imaging-derived data.
 
 * [tracking.py](https://github.com/redchuk/n_track_ML/blob/master/to_become_public/tracking.py)    image segmentation, registration and particle tracking
-* [feature_engineering.py](https://github.com/hajaalin/n_track_ML/blob/master/to_become_public/feature_engineering.py)    generates aggregated features
+* [feature_engineering.py](https://github.com/hajaalin/n_track_ML/blob/master/to_become_public/feature_engineering.py)    generate aggregated features
 * [GBC.py](https://github.com/hajaalin/n_track_ML/blob/master/to_become_public/GBC.py)    baseline performance, GBC, SHAP explanation
 * [MLP.py](https://github.com/hajaalin/n_track_ML/blob/master/to_become_public/MLP.py)    NN trained with aggregated features, SHAP explanation
 * [InceptionTime](https://github.com/hajaalin/n_track_ML/tree/code_review/scripts/tsc)    InceptionTime trained with raw data, SHAP explanation
