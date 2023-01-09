@@ -10,7 +10,7 @@ Collected data is used to train the machine learning models to distinguish diffe
 * [feature_engineering.py](https://github.com/hajaalin/n_track_ML/blob/master/to_become_public/feature_engineering.py)    generates aggregated features
 * [GBC.py](https://github.com/hajaalin/n_track_ML/blob/master/to_become_public/GBC.py)    baseline performance, GBC, SHAP explanation
 * [MLP.py](https://github.com/hajaalin/n_track_ML/blob/master/to_become_public/MLP.py)    NN trained with aggregated features, SHAP explanation
-* [InceptionTime](https://github.com/hajaalin/n_track_ML/tree/code_review/scripts/tsc)    InceptionTime, SHAP explanation
+* [InceptionTime](https://github.com/hajaalin/n_track_ML/tree/code_review/scripts/tsc)    InceptionTime trained with raw data, SHAP explanation
 * [data_47091baa.csv](https://github.com/hajaalin/n_track_ML/blob/master/to_become_public/tracking_output/data_47091baa.csv)    master dataset 
 
 ## Requirements
