@@ -23,8 +23,12 @@ data['theta'] = np.arctan(data['t'])
 # (dy=1, dx=1) and (dy=-1, dx=-1) have the same arctan()
 '''
 
-test_data = pd.DataFrame({'theta_f0': [45, 45, 45, 45, -135, -135, -135, -135],
-                          'theta_f1': [0, 90, -45, 135, 0, 90, 150, -60]})
+test_data = pd.DataFrame({'theta_f0': [45, 45, 45, 45, -135, -135, -135, -135, 90, 90],
+                          'theta_f1': [0, 90, -45, 135, 0, 90, 150, -60, -135, -45]})
 test_data_radian = test_data * math.pi / 180  # to radians as in np trigonometry
 test_data_radian['d_theta']=test_data_radian['theta_f1'] - test_data_radian['theta_f0']
 
+test_data_radian['d_theta_minabs'] = test_data_radian['d_theta']
+test_data_radian.loc[test_data_radian['d_theta'] > math.pi, 'd_theta_minabs'] = test_data_radian['d_theta']-2*math.pi
+test_data_radian.loc[test_data_radian['d_theta'] < -math.pi, 'd_theta_minabs'] = test_data_radian['d_theta']+2*math.pi
+print(test_data_radian)
