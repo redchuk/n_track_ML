@@ -11,6 +11,7 @@ from feature_engineering import get_data  # todo: correct before publishing
 import shap
 
 path = 'tracking_output/data_47091baa.csv'# todo: correct before publishing
+outpath = 'shap_averaged_GBC.csv'
 data_from_csv = pd.read_csv(path)
 X, y, indexed = get_data(data_from_csv)
 
@@ -114,5 +115,6 @@ for i in range(cv_iterations):
 for col in shaps_and_features.columns:
     shap_averaged[col] = shap_repeats[[x for x in shap_repeats.columns if col[1:] == x[1:]]].mean(axis=1)
 
+shap_averaged.to_csv(outpath, index=False)
 plt.title('Aggregated from ' + str(cv_iterations) + ' CV repeats')
 sh_plot(shap_averaged.iloc[:, 20:].to_numpy(), shap_averaged.iloc[:, :20].to_numpy(), X.columns)

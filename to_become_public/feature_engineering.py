@@ -1,10 +1,8 @@
-import pandas as pd
 import numpy as np
 from scipy.stats import linregress
 
 
 def get_data(data):
-
     data['dX'] = data['x_micron'].diff()
     data['dY'] = data['y_micron'].diff()
 
