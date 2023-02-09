@@ -7,10 +7,10 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import GradientBoostingClassifier
 import seaborn as sns
 from matplotlib import pyplot as plt
-from to_become_public.feature_engineering import get_data  # todo: correct before publishing
+from feature_engineering import get_data  # todo: correct before publishing
 import shap
 
-path = 'to_become_public/tracking_output/data_47091baa.csv'# todo: correct before publishing
+path = 'tracking_output/data_47091baa.csv'# todo: correct before publishing
 data_from_csv = pd.read_csv(path)
 X, y, indexed = get_data(data_from_csv)
 
@@ -20,6 +20,8 @@ cv_iterations = 2
 sgkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
 groups = indexed['file']
 idx_file_particle = indexed[['file', 'particle']]
+param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
+              'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30]}
 
 
 def sh_plot(shap_values, feature_values, feature_names):
@@ -36,11 +38,7 @@ def sh_plot(shap_values, feature_values, feature_names):
 
 pivots = []
 baselines = []
-
 for i in range(grid_iterations):
-    param_grid = {'learning_rate': [0.0001, 0.001, 0.01, 0.1, 1, 10],
-                  'max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30]}
-
     gbc = GradientBoostingClassifier(n_estimators=1000)
     grid_search = GridSearchCV(gbc, param_grid, cv=sgkf, refit=False)
 
@@ -113,10 +111,8 @@ for i in range(cv_iterations):
 
     shap_repeats = shap_repeats.join(shaps_and_features) if not shap_repeats.empty else shaps_and_features
 
-for i in shaps_and_features.columns:
-    shap_averaged[i] = shap_repeats[shap_repeats.columns[range(shaps_and_features.columns.tolist().index(i),
-                                                               len(shap_repeats.columns),
-                                                               40)]].mean(axis=1)
+for col in shaps_and_features.columns:
+    shap_averaged[col] = shap_repeats[[x for x in shap_repeats.columns if col[1:] == x[1:]]].mean(axis=1)
 
 plt.title('Aggregated from ' + str(cv_iterations) + ' CV repeats')
 sh_plot(shap_averaged.iloc[:, 20:].to_numpy(), shap_averaged.iloc[:, :20].to_numpy(), X.columns)
