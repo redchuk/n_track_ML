@@ -1,4 +1,5 @@
-from to_become_public.feature_engineering import get_data  # todo: correct before publishing
+#from to_become_public.feature_engineering import get_data  # todo: correct before publishing
+from feature_engineering import get_data  # todo: correct before publishing
 import pandas as pd
 import numpy as np
 import shap
@@ -12,8 +13,9 @@ tf.compat.v1.disable_v2_behavior()
 from tensorflow.keras import layers
 from tensorflow.keras import models
 
-
-path = 'to_become_public/tracking_output/data_47091baa.csv'  # todo: correct before publishing
+#path = 'to_become_public/tracking_output/data_47091baa.csv'  # todo: correct before publishing
+path = 'tracking_output/data_47091baa.csv'  # todo: correct before publishing
+outpath = 'shap_averaged_MLP.csv'
 data_from_csv = pd.read_csv(path)
 frame_counts = data_from_csv.set_index(['file', 'particle']).index.value_counts()
 less_30frames = frame_counts[frame_counts < 30]
@@ -116,12 +118,9 @@ plt.plot(validation_profiles.mean(axis=1))
 plt.show()
 plt.close()
 
-for i in shaps_and_features.columns:
-    shap_averaged[i] = shap_repeats[shap_repeats.columns[range(shaps_and_features.columns.tolist().index(i),
-                                                               len(shap_repeats.columns),
-                                                               40)]].mean(axis=1)
+for col in shaps_and_features.columns:
+        shap_averaged[col] = shap_repeats[[x for x in shap_repeats.columns if col[1:] == x[1:]]].mean(axis=1)
 
+shap_averaged.to_csv(outpath, index=False)
 plt.title('Aggregated from ' + str(cv_iterations) + ' CV repeats')
 sh_plot(shap_averaged.iloc[:, 20:].to_numpy(), shap_averaged.iloc[:, :20].to_numpy(), X.columns)
-
-
