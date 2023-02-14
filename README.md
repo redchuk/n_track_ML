@@ -30,3 +30,4 @@ Collected data is used to train the machine learning models to distinguish diffe
 - trackpy~=0.5.0
 - scikit-image~=0.19.3
 - pystackreg~=0.2.6.post1
+- apeer_ometiff_library~=1.10.1
