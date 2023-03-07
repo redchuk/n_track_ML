@@ -7,15 +7,18 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import GradientBoostingClassifier
 import seaborn as sns
 from matplotlib import pyplot as plt
-from feature_engineering import get_data  # todo: correct before publishing
+#from feature_engineering import get_data  # correct version
+from to_become_public.feature_engineering import get_data  # todo: correct before publishing (Pycharm only)
 import shap
 
-path = 'tracking_output/data_47091baa.csv'# todo: correct before publishing
-outpath = 'shap_averaged_GBC.csv'
+#path = 'tracking_output/data_47091baa.csv'# correct version
+path = 'to_become_public/tracking_output/data_47091baa.csv'  # todo: correct before publishing (Pycharm only)
+#outpath = 'shap_averaged_GBC.csv' # correct version
+outpath = 'to_become_public/tracking_output/shap_averaged_GBC.csv'  # todo: correct before publishing (Pycharm only)
 data_from_csv = pd.read_csv(path)
 X, y, indexed = get_data(data_from_csv)
 
-verbose = True
+verbose = False
 grid_iterations = 2
 cv_iterations = 2
 sgkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
@@ -40,6 +43,7 @@ def sh_plot(shap_values, feature_values, feature_names):
 pivots = []
 baselines = []
 for i in range(grid_iterations):
+    print('iter ' + str(i))  # todo: remove before publishing
     gbc = GradientBoostingClassifier(n_estimators=1000)
     grid_search = GridSearchCV(gbc, param_grid, cv=sgkf, refit=False)
 
@@ -70,6 +74,7 @@ shap_repeats = pd.DataFrame()
 shap_averaged = pd.DataFrame()
 
 for i in range(cv_iterations):
+    print('sh_iter ' + str(i))  # todo: remove before publishing
     shap_splits = []
     X_test_splits = []
     idx_splits = []
@@ -112,8 +117,17 @@ for i in range(cv_iterations):
 
     shap_repeats = shap_repeats.join(shaps_and_features) if not shap_repeats.empty else shaps_and_features
 
+# Below 10reps version
+'''
 for col in shaps_and_features.columns:
     shap_averaged[col] = shap_repeats[[x for x in shap_repeats.columns if col[1:] == x[1:]]].mean(axis=1)
+'''
+
+# ugly version
+for i in shaps_and_features.columns:
+    shap_averaged[i] = shap_repeats[shap_repeats.columns[range(shaps_and_features.columns.tolist().index(i),
+                                                               len(shap_repeats.columns),
+                                                               40)]].mean(axis=1)
 
 shap_averaged.to_csv(outpath, index=False)
 plt.title('Aggregated from ' + str(cv_iterations) + ' CV repeats')

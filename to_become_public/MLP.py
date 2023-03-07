@@ -1,5 +1,5 @@
-#from to_become_public.feature_engineering import get_data  # todo: correct before publishing
-from feature_engineering import get_data  # todo: correct before publishing
+from to_become_public.feature_engineering import get_data  # todo: correct before publishing
+#from feature_engineering import get_data  # correct version
 import pandas as pd
 import numpy as np
 import shap
@@ -13,9 +13,9 @@ tf.compat.v1.disable_v2_behavior()
 from tensorflow.keras import layers
 from tensorflow.keras import models
 
-#path = 'to_become_public/tracking_output/data_47091baa.csv'  # todo: correct before publishing
-path = 'tracking_output/data_47091baa.csv'  # todo: correct before publishing
-outpath = 'shap_averaged_MLP.csv'
+path = 'to_become_public/tracking_output/data_47091baa.csv'  # todo: correct before publishing
+#path = 'tracking_output/data_47091baa.csv'  # correct version
+outpath = 'to_become_public/tracking_output/shap_averaged_MLP.csv'  # todo: correct before publishing
 data_from_csv = pd.read_csv(path)
 frame_counts = data_from_csv.set_index(['file', 'particle']).index.value_counts()
 less_30frames = frame_counts[frame_counts < 30]
@@ -23,7 +23,7 @@ data = data_from_csv.set_index(['file', 'particle']).drop(less_30frames.index)
 
 X, y, indexed = get_data(data.reset_index())
 
-verbose = True
+verbose = False
 cv_iterations = 2
 sgkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
 groups = indexed['file']
@@ -46,6 +46,7 @@ shap_repeats = pd.DataFrame()
 shap_averaged = pd.DataFrame()
 
 for i in range(cv_iterations):
+    print('sh_iter ' + str(i))  # todo: remove before publishing
     shap_splits = []
     X_test_splits = []
     idx_splits = []
@@ -118,8 +119,18 @@ plt.plot(validation_profiles.mean(axis=1))
 plt.show()
 plt.close()
 
+# <10 reps version
+'''
 for col in shaps_and_features.columns:
         shap_averaged[col] = shap_repeats[[x for x in shap_repeats.columns if col[1:] == x[1:]]].mean(axis=1)
+'''
+
+# ugly version
+for i in shaps_and_features.columns:
+    shap_averaged[i] = shap_repeats[shap_repeats.columns[range(shaps_and_features.columns.tolist().index(i),
+                                                               len(shap_repeats.columns),
+                                                               40)]].mean(axis=1)
+
 
 shap_averaged.to_csv(outpath, index=False)
 plt.title('Aggregated from ' + str(cv_iterations) + ' CV repeats')
