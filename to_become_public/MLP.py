@@ -24,7 +24,7 @@ data = data_from_csv.set_index(['file', 'particle']).drop(less_30frames.index)
 X, y, indexed = get_data(data.reset_index())
 
 verbose = False
-cv_iterations = 2
+cv_iterations = 20
 sgkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
 groups = indexed['file']
 idx_file_particle = indexed[['file', 'particle']]
@@ -115,6 +115,7 @@ for i in range(cv_iterations):
 
     shap_repeats = shap_repeats.join(shaps_and_features) if not shap_repeats.empty else shaps_and_features
 
+validation_profiles.to_csv('to_become_public/tracking_output/20230308_75f10d8c_validation_profiles_MLP.csv', index=False)
 plt.plot(validation_profiles.mean(axis=1))
 plt.show()
 plt.close()

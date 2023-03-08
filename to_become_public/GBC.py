@@ -19,8 +19,8 @@ data_from_csv = pd.read_csv(path)
 X, y, indexed = get_data(data_from_csv)
 
 verbose = False
-grid_iterations = 2
-cv_iterations = 2
+grid_iterations = 20
+cv_iterations = 20
 sgkf = StratifiedGroupKFold(n_splits=4, shuffle=True)
 groups = indexed['file']
 idx_file_particle = indexed[['file', 'particle']]

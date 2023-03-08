@@ -1,10 +1,13 @@
 import pandas as pd
 import dabest
 import seaborn as sns
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, rcParams
 from numpy import mean, median
 import math
 from scipy import stats
+
+
+rcParams['figure.dpi'] = 300
 
 data_to_plot = pd.read_csv('data/data_sterile_f67592f.csv')
 # data_to_plot = data_to_plot[data_to_plot['f_outliers2SD_diff_xy'] > 1] # outliers only
@@ -209,3 +212,18 @@ two_group.mean_diff.plot(raw_marker_size=4,
                          custom_palette='Paired',
                          swarm_ylim=(0, 1),
                          )
+
+"""
+MLP plotting, accuracy/epoch
+"""
+
+validation_profiles = pd.read_csv('to_become_public/tracking_output/20230308_75f10d8c_validation_profiles_MLP.csv')
+mlp_vals_long = pd.melt(validation_profiles, ignore_index=False)
+mlp_vals_long.reset_index(inplace=True)
+rcParams.update({'figure.autolayout': True})
+sns.set_style(style='ticks')
+p = sns.relplot(
+    data=mlp_vals_long, kind="line", x='index', y='value')
+p.set(ylim=(0.57, 0.66))
+plt.gcf().set_size_inches(5, 3.5)
+plt.show()
