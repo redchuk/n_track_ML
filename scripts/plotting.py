@@ -214,8 +214,10 @@ two_group.mean_diff.plot(raw_marker_size=4,
                          )
 
 """
-MLP plotting, accuracy/epoch
+MLP plotting
 """
+
+# accuracy/epoch
 
 validation_profiles = pd.read_csv('to_become_public/tracking_output/20230308_75f10d8c_validation_profiles_MLP.csv')
 mlp_vals_long = pd.melt(validation_profiles, ignore_index=False)
@@ -224,6 +226,21 @@ rcParams.update({'figure.autolayout': True})
 sns.set_style(style='ticks')
 p = sns.relplot(
     data=mlp_vals_long, kind="line", x='index', y='value')
+p.set(ylim=(0.57, 0.66))
+plt.gcf().set_size_inches(5, 3.5)
+plt.show()
+
+# accuracy/cv repeats, for 200th epoch
+
+list_acc = validation_profiles.iloc[-1]
+acc_df = pd.DataFrame()
+for i in reversed(range(3, len(list_acc), 4)):
+    acc_df[i] = list_acc[:i]
+
+acc_df_long = acc_df.melt()
+rcParams.update({'figure.autolayout': True})
+sns.set_style(style='ticks')
+sns.relplot(data=acc_df_long.dropna(), kind = 'line', x='variable', y='value')
 p.set(ylim=(0.57, 0.66))
 plt.gcf().set_size_inches(5, 3.5)
 plt.show()
