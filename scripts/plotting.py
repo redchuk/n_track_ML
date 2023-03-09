@@ -6,6 +6,7 @@ from numpy import mean, median
 import math
 from scipy import stats
 
+# mpl colors https://matplotlib.org/stable/gallery/color/named_colors.html
 
 rcParams['figure.dpi'] = 300
 
@@ -72,7 +73,6 @@ multi_2group = dabest.load(all_chr, idx=(('chr1, 10%', 'chr1, 0.3%'),
 # CI is 95% by default in dabest
 print(multi_2group.mean_diff)
 
-
 multi_2group.mean_diff.plot(raw_marker_size=3,
                             es_marker_size=6,
                             swarm_label=feature,
@@ -94,12 +94,11 @@ Chromosome 1 only
 chr1 = data_to_plot[data_to_plot["t_guide"].str.contains('1398|1514', regex=True)]
 chr1.set_index(['file', 'particle'], inplace=True)
 
-#features = ['f_min_dist_micron', 'f_min_dist_range', 'f_total_min_dist',
+# features = ['f_min_dist_micron', 'f_min_dist_range', 'f_total_min_dist',
 # 'f_slope_min_dist_micron', 'f_mean_diff_xy_micron', 'f_max_diff_xy_micron',
 # 'f_persistence', 'f_total_displacement']
 
 features = ['f_total_min_dist', 'f_mean_diff_xy_micron', 'f_total_displacement']
-
 
 # fast / slow
 
@@ -128,10 +127,10 @@ for i in features:
     spear, spval = stats.spearmanr(a=c_p['p_' + i], b=c_p['c_' + i])
 
     fig = sns.lmplot(x='p_' + i, y='c_' + i, data=c_p, aspect=1)
-    #fig.set(xlim=(0, 1.1))
-    #fig.set(ylim=(0, 1.1))
+    # fig.set(xlim=(0, 1.1))
+    # fig.set(ylim=(0, 1.1))
     # .set_axis_labels
-    plt.title('spear='+str(spear)+', p='+str(spval))
+    plt.title('spear=' + str(spear) + ', p=' + str(spval))
     fig.savefig('C:/Users/redchuk/python/temp/temp_n_track_RF/summry20210923/r_sq/' + 'cp_' + str(i) + '.png')
     plt.close()
 
@@ -240,7 +239,31 @@ for i in reversed(range(3, len(list_acc), 4)):
 acc_df_long = acc_df.melt()
 rcParams.update({'figure.autolayout': True})
 sns.set_style(style='ticks')
-sns.relplot(data=acc_df_long.dropna(), kind = 'line', x='variable', y='value')
+sns.relplot(data=acc_df_long.dropna(), kind='line', x='variable', y='value')
 p.set(ylim=(0.57, 0.66))
+plt.gcf().set_size_inches(5, 3.5)
+plt.show()
+
+"""
+GBC plotting
+"""
+
+# accuracy/cv repeats, for 200th epoch
+
+import numpy as np
+pd.read_csv('to_become_public/tracking_output/20230309_75f10d8c_pivots_GBC.csv')
+list_acc = list(pivots_df.loc[0.01, 5].reset_index(drop=True))
+acc_df = pd.DataFrame()
+for i in reversed(range(2, len(list_acc))):
+    #    print(i)
+    #   print(list_acc[:i])
+    acc_df[i] = pd.Series(list_acc[:i])
+acc_df_long = acc_df.melt()
+rcParams.update({'figure.autolayout': True})
+sns.set_style(style='ticks')
+p = sns.relplot(data=acc_df_long.dropna(), kind='line', x='variable', y='value', color='steelblue')
+p.set(ylim=(0.54, 0.64))
+p.set(xlim=(1, 20))
+p.set(xticks=np.arange(1, 21, 2))
 plt.gcf().set_size_inches(5, 3.5)
 plt.show()
