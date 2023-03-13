@@ -5,10 +5,12 @@ from matplotlib import pyplot as plt, rcParams
 from numpy import mean, median
 import math
 from scipy import stats
+import shap
 
 # mpl colors https://matplotlib.org/stable/gallery/color/named_colors.html
 
 rcParams['figure.dpi'] = 300
+rcParams.update({'figure.autolayout': True})
 
 data_to_plot = pd.read_csv('data/data_sterile_f67592f.csv')
 # data_to_plot = data_to_plot[data_to_plot['f_outliers2SD_diff_xy'] > 1] # outliers only
@@ -244,6 +246,32 @@ p.set(ylim=(0.57, 0.66))
 plt.gcf().set_size_inches(5, 3.5)
 plt.show()
 
+# MLP SHAP
+
+mlp_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_MLP.csv')
+
+
+def sh_plot(shap_values, feature_values, feature_names):
+    shap.summary_plot(shap_values,
+                      feature_values,
+                      feature_names=feature_names,
+                      sort=False,
+                      color_bar=False,
+                      plot_size=(10, 10),
+                      show=False,
+                      )
+
+
+fnames = mlp_shap.iloc[:, :20].columns.str[4:]
+sh_plot(mlp_shap.iloc[:, 20:].to_numpy(), mlp_shap.iloc[:, :20].to_numpy(), fnames)
+rcParams['figure.dpi'] = 200
+plt.title('MLP, 20 CV repeats')
+plt.gcf().set_size_inches(6, 6)
+plt.show()
+
+
+
+
 """
 GBC plotting
 """
@@ -251,6 +279,7 @@ GBC plotting
 # accuracy/cv repeats, for 200th epoch
 
 import numpy as np
+
 pd.read_csv('to_become_public/tracking_output/20230309_75f10d8c_pivots_GBC.csv')
 list_acc = list(pivots_df.loc[0.01, 5].reset_index(drop=True))
 acc_df = pd.DataFrame()
@@ -266,4 +295,27 @@ p.set(ylim=(0.54, 0.64))
 p.set(xlim=(1, 20))
 p.set(xticks=np.arange(1, 21, 2))
 plt.gcf().set_size_inches(5, 3.5)
+plt.show()
+
+# GBC SHAP
+
+gbc_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_GBC.csv')
+
+
+def sh_plot(shap_values, feature_values, feature_names):
+    shap.summary_plot(shap_values,
+                      feature_values,
+                      feature_names=feature_names,
+                      sort=False,
+                      color_bar=False,
+                      plot_size=(10, 10),
+                      show=False,
+                      )
+
+
+fnames = gbc_shap.iloc[:, :20].columns.str[4:]
+sh_plot(gbc_shap.iloc[:, 20:].to_numpy(), gbc_shap.iloc[:, :20].to_numpy(), fnames)
+rcParams['figure.dpi'] = 200
+plt.title('GBC, 20 CV repeats')
+plt.gcf().set_size_inches(6, 6)
 plt.show()
