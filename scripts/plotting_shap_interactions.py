@@ -3,6 +3,12 @@ from matplotlib import pyplot as plt, rcParams
 import seaborn as sns
 import numpy as np
 import shap
+
+from matplotlib import pyplot as plt, rcParams
+rcParams['figure.dpi'] = 300
+rcParams.update({'figure.autolayout': True})
+
+
 gbc_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_GBC.csv')
 shaps = gbc_shap.iloc[:, 20:]
 X = gbc_shap.iloc[:, :20]
@@ -49,7 +55,7 @@ def approximate_interactions(index, shap_values, X, feature_names=None):
                     v += abs(np.corrcoef(shap_ref[j:j + inc], val_other[j:j + inc])[0, 1])
         nan_v = v
         interactions.append(max(val_v, nan_v))
-    return np.argsort(-np.abs(interactions))
+    return np.argsort(-np.abs(interactions)), np.abs(interactions)
 
 
 def convert_name(ind, shap_values, input_names):
@@ -82,4 +88,21 @@ def encode_array_if_needed(arr, dtype=np.float64):
         encoded_array = np.array([encoding_dict[string] for string in arr], dtype=dtype)
         return encoded_array
 
-approximate_interactions(index = '19r_MD', shap_values=shaps.to_numpy(), X=X.to_numpy(), feature_names=X.columns)
+#approximate_interactions(index = '19r_MD', shap_values=shaps.to_numpy(), X=X.to_numpy(),
+#                         feature_names=X.columns.str[4:])
+inters_rank = pd.DataFrame()
+inters = pd.DataFrame()
+
+# number here represents feature index in feature_list, row index - rank in importance
+for i in X.columns.str[4:]:
+    intrs = approximate_interactions(index=i, shap_values=shaps.to_numpy(), X=X.to_numpy(),
+                         feature_names=X.columns.str[4:])
+
+    inters[i] = intrs[1]
+    inters_rank[i] = intrs[0]
+
+inters.index = X.columns.str[4:]
+
+sns.heatmap(inters, annot=False, square=True, cbar=False, cmap='coolwarm')
+plt.show()
+plt.close()
