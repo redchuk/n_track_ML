@@ -5,13 +5,14 @@ import numpy as np
 import shap
 
 from matplotlib import pyplot as plt, rcParams
+
 rcParams['figure.dpi'] = 300
 rcParams.update({'figure.autolayout': True})
-
 
 gbc_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_GBC.csv')
 shaps = gbc_shap.iloc[:, 20:]
 X = gbc_shap.iloc[:, :20]
+
 
 def approximate_interactions(index, shap_values, X, feature_names=None):
     # that's from shap utils https://github.com/slundberg/shap/blob/master/shap/utils/_general.py
@@ -88,7 +89,8 @@ def encode_array_if_needed(arr, dtype=np.float64):
         encoded_array = np.array([encoding_dict[string] for string in arr], dtype=dtype)
         return encoded_array
 
-#approximate_interactions(index = '19r_MD', shap_values=shaps.to_numpy(), X=X.to_numpy(),
+
+# approximate_interactions(index = '19r_MD', shap_values=shaps.to_numpy(), X=X.to_numpy(),
 #                         feature_names=X.columns.str[4:])
 inters_rank = pd.DataFrame()
 inters = pd.DataFrame()
@@ -96,7 +98,7 @@ inters = pd.DataFrame()
 # number here represents feature index in feature_list, row index - rank in importance
 for i in X.columns.str[4:]:
     intrs = approximate_interactions(index=i, shap_values=shaps.to_numpy(), X=X.to_numpy(),
-                         feature_names=X.columns.str[4:])
+                                     feature_names=X.columns.str[4:])
 
     inters[i] = intrs[1]
     inters_rank[i] = intrs[0]
@@ -104,5 +106,48 @@ for i in X.columns.str[4:]:
 inters.index = X.columns.str[4:]
 
 sns.heatmap(inters, annot=False, square=True, cbar=False, cmap='coolwarm')
+plt.show()
+plt.close()
+
+''' Bump plot for importance gbc/mlp '''
+
+feature_ranks = pd.DataFrame()
+
+# gbc mean abs shaps and rank
+
+gbc_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_GBC.csv')
+shaps = gbc_shap.iloc[:, 20:]
+X = gbc_shap.iloc[:, :20]
+m_shaps = shaps.abs().mean(0)
+m_shaps.index = shaps.columns.str[9:]
+feature_ranks['gbc_m_shaps'] = m_shaps
+feature_ranks['gbc_ranks'] = np.argsort(np.argsort(m_shaps))
+
+# mlp mean abs shaps and rank
+
+mlp_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_MLP.csv')
+nn_shaps = mlp_shap.iloc[:, 20:]
+nn_X = mlp_shap.iloc[:, :20]
+nn_m_shaps = nn_shaps.abs().mean(0)
+nn_m_shaps.index = nn_shaps.columns.str[9:]
+feature_ranks['mlp_m_shaps'] = nn_m_shaps
+feature_ranks['mlp_ranks'] = np.argsort(np.argsort(nn_m_shaps))
+
+# plot
+
+long_feature_ranks = pd.melt(feature_ranks[['gbc_ranks', 'mlp_ranks']], ignore_index=False).reset_index()
+plt.rcParams["figure.figsize"] = (1.5, 5)
+
+fig, ax = plt.subplots()
+ax.axis('off')
+
+for i in shaps.columns.str[9:]:
+    ax.plot(long_feature_ranks.loc[long_feature_ranks['index'] == i]['variable'],
+            long_feature_ranks.loc[long_feature_ranks['index'] == i]['value'],
+            "o-",
+            markerfacecolor='white',
+            linewidth=3,
+            )
+
 plt.show()
 plt.close()
