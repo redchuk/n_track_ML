@@ -113,6 +113,16 @@ plt.close()
 
 feature_ranks = pd.DataFrame()
 
+# baseline accs to add to bump chart
+# note, acc of 1 level decision tree is used as feature importance.
+# those are calculated in plotting_baselines.py
+# max acc is higher than baseline, as there is no free feature selection, so it's ok
+
+tree_accs = pd.read_csv('data/20230315_02f404cc_acc_1lvlTREE.csv', index_col='index')
+tree_accs = tree_accs['base_sf_rank']
+tree_accs.loc[['ifFast', 'ifCentr', 'out2sd', 'out3sd']] = np.nan  # no meaning for thresholding
+feature_ranks['tree_ranks'] = tree_accs
+
 # gbc mean abs shaps and rank
 
 gbc_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_GBC.csv')
@@ -134,9 +144,9 @@ feature_ranks['mlp_m_shaps'] = nn_m_shaps
 feature_ranks['mlp_ranks'] = np.argsort(np.argsort(nn_m_shaps))
 
 # plot
-
-long_feature_ranks = pd.melt(feature_ranks[['gbc_ranks', 'mlp_ranks']], ignore_index=False).reset_index()
-plt.rcParams["figure.figsize"] = (1.5, 5)
+to_plot = feature_ranks[['tree_ranks', 'gbc_ranks', 'mlp_ranks']]
+long_feature_ranks = pd.melt(to_plot, ignore_index=False).reset_index()
+plt.rcParams["figure.figsize"] = (2.5, 5)
 
 fig, ax = plt.subplots()
 ax.axis('off')
