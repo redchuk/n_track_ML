@@ -269,9 +269,6 @@ plt.title('MLP, 20 CV repeats')
 plt.gcf().set_size_inches(6, 6)
 plt.show()
 
-
-
-
 """
 GBC plotting
 """
@@ -319,3 +316,28 @@ rcParams['figure.dpi'] = 200
 plt.title('GBC, 20 CV repeats')
 plt.gcf().set_size_inches(6, 6)
 plt.show()
+
+
+# GBC SHAP dependence  /  can be used for MLP
+
+list1 = [('MD', 'out3sd'), ('MDist', 'TDist'), ('MA', 'DistR'), ('Pers', 'MDist')]
+fnames = gbc_shap.iloc[:, :20].columns.str[4:]
+
+def sh_dep_plot(feature, shap_values, feature_values, fnames, color):
+    shap.dependence_plot(feature,
+                         shap_values,
+                         feature_values,
+                         fnames,
+                         interaction_index=color,
+                         show=False,
+                         alpha=0.7,
+                         )
+
+
+for i in list1:
+    sh_dep_plot(i[0], gbc_shap.iloc[:, 20:].to_numpy(), gbc_shap.iloc[:, :20].to_numpy(), fnames, i[1])
+    rcParams['figure.dpi'] = 200
+    plt.gcf().set_size_inches(6, 4)
+    plt.show()
+    plt.close()
+
