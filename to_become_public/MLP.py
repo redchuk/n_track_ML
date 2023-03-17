@@ -15,7 +15,7 @@ from tensorflow.keras import models
 
 path = 'to_become_public/tracking_output/data_47091baa.csv'  # todo: correct before publishing
 #path = 'tracking_output/data_47091baa.csv'  # correct version
-outpath = 'to_become_public/tracking_output/shap_averaged_MLP.csv'  # todo: correct before publishing
+outpath = 'data/20230317_7a46f7a9_shap_averaged_MLP.csv'  # todo: correct before publishing
 data_from_csv = pd.read_csv(path)
 frame_counts = data_from_csv.set_index(['file', 'particle']).index.value_counts()
 less_30frames = frame_counts[frame_counts < 30]
