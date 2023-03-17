@@ -228,7 +228,7 @@ sns.set_style(style='ticks')
 p = sns.relplot(
     data=mlp_vals_long, kind="line", x='index', y='value')
 p.set(ylim=(0.57, 0.66))
-plt.gcf().set_size_inches(5, 3.5)
+plt.gcf().set_size_inches(4, 3.5)
 plt.show()
 
 # accuracy/cv repeats, for 200th epoch
@@ -242,8 +242,8 @@ acc_df_long = acc_df.melt()
 rcParams.update({'figure.autolayout': True})
 sns.set_style(style='ticks')
 sns.relplot(data=acc_df_long.dropna(), kind='line', x='variable', y='value')
-p.set(ylim=(0.57, 0.66))
-plt.gcf().set_size_inches(5, 3.5)
+p.set(ylim=(0.57, 0.66)) # doesn't work here
+plt.gcf().set_size_inches(4, 3.5)
 plt.show()
 
 # MLP SHAP
@@ -277,7 +277,7 @@ GBC plotting
 
 import numpy as np
 
-pd.read_csv('data/20230317_7a46f7a9_pivots_GBC.csv')
+pivots_df = pd.read_csv('data/20230317_7a46f7a9_pivots_GBC.csv')
 list_acc = list(pivots_df.loc[0.01, 5].reset_index(drop=True))
 acc_df = pd.DataFrame()
 for i in reversed(range(2, len(list_acc))):
