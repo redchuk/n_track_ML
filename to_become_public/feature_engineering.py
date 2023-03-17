@@ -3,8 +3,8 @@ from scipy.stats import linregress
 
 
 def get_data(data):
-    data['dX'] = data['x_micron'].diff()
-    data['dY'] = data['y_micron'].diff()
+    data['dX'] = data.groupby(['file', 'particle'])['x_micron'].diff()
+    data['dY'] = data.groupby(['file', 'particle'])['y_micron'].diff()
 
     data_agg = data.groupby(['file', 'particle']).agg(serum=('serum', 'first'),
 
