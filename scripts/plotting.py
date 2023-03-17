@@ -220,7 +220,7 @@ MLP plotting
 
 # accuracy/epoch
 
-validation_profiles = pd.read_csv('to_become_public/tracking_output/20230308_75f10d8c_validation_profiles_MLP.csv')
+validation_profiles = pd.read_csv('data/20230317_7a46f7a9_validation_profiles_MLP.csv')
 mlp_vals_long = pd.melt(validation_profiles, ignore_index=False)
 mlp_vals_long.reset_index(inplace=True)
 rcParams.update({'figure.autolayout': True})
@@ -248,7 +248,7 @@ plt.show()
 
 # MLP SHAP
 
-mlp_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_MLP.csv')
+mlp_shap = pd.read_csv('data/20230317_7a46f7a9_shap_averaged_MLP.csv')
 
 
 def sh_plot(shap_values, feature_values, feature_names):
@@ -273,11 +273,11 @@ plt.show()
 GBC plotting
 """
 
-# accuracy/cv repeats, for 200th epoch
+# accuracy/cv repeats
 
 import numpy as np
 
-pd.read_csv('to_become_public/tracking_output/20230309_75f10d8c_pivots_GBC.csv')
+pd.read_csv('data/20230317_7a46f7a9_pivots_GBC.csv')
 list_acc = list(pivots_df.loc[0.01, 5].reset_index(drop=True))
 acc_df = pd.DataFrame()
 for i in reversed(range(2, len(list_acc))):
@@ -296,7 +296,7 @@ plt.show()
 
 # GBC SHAP
 
-gbc_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_GBC.csv')
+gbc_shap = pd.read_csv('data/20230317_7a46f7a9_shap_averaged_GBC.csv')
 
 
 def sh_plot(shap_values, feature_values, feature_names):

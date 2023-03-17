@@ -58,7 +58,7 @@ for i in range(grid_iterations):
     baselines.append(np.mean(cross_val_score(baseline, X, y, cv=sgkf, groups=groups)))
 
 pivots_df = pd.concat(pivots)
-pivots_df.to_csv('to_become_public/tracking_output/20230309_75f10d8c_pivots_GBC.csv')
+pivots_df.to_csv('data/20230317_7a46f7a9_pivots_GBC.csv')
 
 mean_accuracy = pd.concat(pivots).mean(level=0)
 sns.heatmap(mean_accuracy, annot=True)
