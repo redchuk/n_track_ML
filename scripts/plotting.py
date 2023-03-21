@@ -291,7 +291,7 @@ p = sns.relplot(data=acc_df_long.dropna(), kind='line', x='variable', y='value',
 p.set(ylim=(0.54, 0.64))
 p.set(xlim=(1, 20))
 p.set(xticks=np.arange(1, 21, 2))
-plt.gcf().set_size_inches(5, 3.5)
+plt.gcf().set_size_inches(4, 3.5)
 plt.show()
 
 # GBC SHAP

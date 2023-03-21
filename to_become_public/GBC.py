@@ -14,7 +14,7 @@ import shap
 #path = 'tracking_output/data_47091baa.csv'# correct version
 path = 'to_become_public/tracking_output/data_47091baa.csv'  # todo: correct before publishing (Pycharm only)
 #outpath = 'shap_averaged_GBC.csv' # correct version
-outpath = 'data/20230317_7a46f7a9_shap_averaged_GBC.csv'  # todo: correct before publishing (Pycharm only)
+outpath = 'data/20230321_7a46f7a9_shap_averaged_GBC.csv'  # todo: correct before publishing (Pycharm only)
 data_from_csv = pd.read_csv(path)
 X, y, indexed = get_data(data_from_csv)
 
@@ -58,7 +58,7 @@ for i in range(grid_iterations):
     baselines.append(np.mean(cross_val_score(baseline, X, y, cv=sgkf, groups=groups)))
 
 pivots_df = pd.concat(pivots)
-pivots_df.to_csv('data/20230317_7a46f7a9_pivots_GBC.csv')
+pivots_df.to_csv('data/20230321_7a46f7a9_pivots_GBC.csv')
 
 mean_accuracy = pd.concat(pivots).mean(level=0)
 sns.heatmap(mean_accuracy, annot=True)
