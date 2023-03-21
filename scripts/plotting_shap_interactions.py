@@ -118,14 +118,14 @@ feature_ranks = pd.DataFrame()
 # those are calculated in plotting_baselines.py
 # max acc is higher than baseline, as there is no free feature selection, so it's ok
 
-tree_accs = pd.read_csv('data/20230315_02f404cc_acc_1lvlTREE.csv', index_col='index')
+tree_accs = pd.read_csv('data/20230321_7a46f7a9_acc_1lvlTREE.csv', index_col='index')
 tree_accs = tree_accs['base_sf_rank']
 tree_accs.loc[['ifFast', 'ifCentr', 'out2sd', 'out3sd']] = np.nan  # no meaning for thresholding
 feature_ranks['tree_ranks'] = tree_accs
 
 # gbc mean abs shaps and rank
 
-gbc_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_GBC.csv')
+gbc_shap = pd.read_csv('data/20230321_7a46f7a9_shap_averaged_GBC.csv')
 shaps = gbc_shap.iloc[:, 20:]
 X = gbc_shap.iloc[:, :20]
 m_shaps = shaps.abs().mean(0)
@@ -135,7 +135,7 @@ feature_ranks['gbc_ranks'] = np.argsort(np.argsort(m_shaps))
 
 # mlp mean abs shaps and rank
 
-mlp_shap = pd.read_csv('data/20230308_75f10d8c_shap_averaged_MLP.csv')
+mlp_shap = pd.read_csv('data/20230317_7a46f7a9_shap_averaged_MLP.csv')
 nn_shaps = mlp_shap.iloc[:, 20:]
 nn_X = mlp_shap.iloc[:, :20]
 nn_m_shaps = nn_shaps.abs().mean(0)

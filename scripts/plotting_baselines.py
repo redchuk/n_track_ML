@@ -50,5 +50,6 @@ for i in range(20):
 
 base_accs['mean'] = base_accs.mean(axis=1)
 base_accs['base_sf_rank']=np.argsort(np.argsort(base_accs['mean']))
-base_accs.to_csv('data/20230315_02f404cc_acc_1lvlTREE.csv', index=False)
+base_accs.reset_index(inplace=True)
+base_accs.to_csv('data/20230321_7a46f7a9_acc_1lvlTREE.csv', index=False)
 
