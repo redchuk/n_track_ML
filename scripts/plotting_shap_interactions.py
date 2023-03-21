@@ -161,3 +161,5 @@ for i in shaps.columns.str[9:]:
 
 plt.show()
 plt.close()
+
+feature_ranks.reset_index(inplace=True)
