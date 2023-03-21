@@ -296,7 +296,8 @@ plt.show()
 
 # GBC SHAP
 
-gbc_shap = pd.read_csv('data/20230317_7a46f7a9_shap_averaged_GBC.csv')
+path = 'data/20230321_7a46f7a9_shap_averaged_GBC.csv'
+gbc_shap = pd.read_csv(path)
 
 
 def sh_plot(shap_values, feature_values, feature_names):
@@ -320,7 +321,12 @@ plt.show()
 
 # GBC SHAP dependence  /  can be used for MLP
 
-list1 = [('MD', 'out3sd'), ('MDist', 'TDist'), ('MA', 'DistR'), ('Pers', 'MDist')]
+path = 'data/20230321_7a46f7a9_shap_averaged_GBC.csv'
+gbc_shap = pd.read_csv(path)
+
+#list1 = [('MD', 'MA'), ('MDist', 'MA'), ('MA', 'MD'), ('Pers', 'MA')]
+list1 = [('MD', 'Pers'), ('MDist', 'sDist'), ('MA', 'rVarD'), ('Pers', 'out3sd')]
+
 fnames = gbc_shap.iloc[:, :20].columns.str[4:]
 
 def sh_dep_plot(feature, shap_values, feature_values, fnames, color):
@@ -337,6 +343,7 @@ def sh_dep_plot(feature, shap_values, feature_values, fnames, color):
 for i in list1:
     sh_dep_plot(i[0], gbc_shap.iloc[:, 20:].to_numpy(), gbc_shap.iloc[:, :20].to_numpy(), fnames, i[1])
     rcParams['figure.dpi'] = 200
+    plt.title(path.split('/')[1].split('.')[0])
     plt.gcf().set_size_inches(6, 4)
     plt.show()
     plt.close()
