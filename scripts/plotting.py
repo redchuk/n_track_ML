@@ -6,8 +6,6 @@ from numpy import mean, median
 import math
 from scipy import stats
 import shap
-from to_become_public.feature_engineering import get_data  # todo: correct before publishing (Pycharm only)
-
 
 # mpl colors https://matplotlib.org/stable/gallery/color/named_colors.html
 
@@ -364,21 +362,57 @@ Feature correlation colored by SHAP
 path = 'data/20230317_7a46f7a9_shap_averaged_MLP.csv'
 x_n_shaps = pd.read_csv(path)
 x_n_shaps.columns = x_n_shaps.columns.str[4:]
-x_n_shaps['sum_shap'] = x_n_shaps[['shap_MD', 'shap_MaxD',
-                                   'shap_VarD', 'shap_MA', 'shap_MP', 'shap_MDist', 'shap_VarDist',
-                                   'shap_rVarD', 'shap_rVarDist', 'shap_TD', 'shap_Pers', 'shap_ifFast',
-                                   'shap_DistR', 'shap_TDist', 'shap_ifCentr', 'shap_sDist', 'shap_sA',
-                                   'shap_sP', 'shap_out2sd', 'shap_out3sd']].sum(axis=1)
 
 sns.relplot(data=x_n_shaps,
-            x='MA', y='sA',
-            hue='shap_sA',
-            #alpha=0.9,
-            palette='Spectral',
-            size='shap_sA',
-            sizes=(1, 200),
+            x='MD', y='MDist',
+            # hue='MA',
+            # alpha=0.9,
+            # palette='Spectral',
+            # size='MA',
+            # sizes=(1, 100),
             )
-plt.ylim(-0.9,)
-plt.xlim(110, 790)
+# plt.ylim(-0.9,)
+# plt.xlim(110, 790)
 plt.show()
 plt.close()
+
+"""
+post-SHAP plotting
+feature correlation 
+"""
+
+data_to_plot = pd.read_csv('data/data_sterile_f67592f.csv')
+
+g_chr1 = '1398|1514'
+g_chr10 = '1521|1522'
+g_chr13 = '1403|1404'
+g_chrX = '1406'
+g_telo = '1362'
+
+data_to_plot = data_to_plot[data_to_plot['t_guide'].str.contains(g_chr1, regex=True)]  # .dropna()
+
+canonical_fnames = {'diff_xy_micron': 'D',  # Locus displacement, microns
+                    'area_micron': 'A',  # Nuclear area, square microns
+                    'perimeter_au_norm': 'P',  # Nuclear perimeter, arbitrary units
+                    'min_dist_micron': 'Dist',  # Minimal distance from locus to nuclear rim, microns
+                    }
+
+# next
+data_to_plot.rename(columns=canonical_fnames, inplace=True)
+
+# next
+'''
+sns.relplot(data=data_to_plot,
+            x='MD', y='MDist',
+            #hue='MA',
+            #alpha=0.9,
+            #palette='Spectral',
+            #size='MA',
+            #sizes=(1, 100),
+            )
+#plt.ylim(-0.9,)
+#plt.xlim(110, 790)
+plt.show()
+plt.close()
+
+'''
