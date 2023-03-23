@@ -6,6 +6,8 @@ from numpy import mean, median
 import math
 from scipy import stats
 import shap
+from to_become_public.feature_engineering import get_data  # todo: correct before publishing (Pycharm only)
+
 
 # mpl colors https://matplotlib.org/stable/gallery/color/named_colors.html
 
@@ -242,7 +244,7 @@ acc_df_long = acc_df.melt()
 rcParams.update({'figure.autolayout': True})
 sns.set_style(style='ticks')
 sns.relplot(data=acc_df_long.dropna(), kind='line', x='variable', y='value')
-p.set(ylim=(0.57, 0.66)) # doesn't work here
+p.set(ylim=(0.57, 0.66))  # doesn't work here
 plt.gcf().set_size_inches(4, 3.5)
 plt.show()
 
@@ -318,16 +320,17 @@ plt.title('GBC, 20 CV repeats')
 plt.gcf().set_size_inches(6, 6)
 plt.show()
 
-
 # GBC SHAP dependence  /  can be used for MLP
 
 path = 'data/20230321_7a46f7a9_shap_averaged_GBC.csv'
 gbc_shap = pd.read_csv(path)
 
-#list1 = [('MD', 'MA'), ('MDist', 'MA'), ('MA', 'MD'), ('Pers', 'MA')]
-list1 = [('MD', 'Pers'), ('MDist', 'sDist'), ('MA', 'rVarD'), ('Pers', 'out3sd')]
+# list1 = [('MD', 'MA'), ('MDist', 'MA'), ('MA', 'MD'), ('Pers', 'MA')]
+# list1 = [('MD', 'Pers'), ('MDist', 'sDist'), ('MA', 'rVarD'), ('Pers', 'out3sd')]
+list1 = [('sA', 'ifCentr'), ('sDist', 'ifCentr'), ('TDist', 'ifCentr'), ('sDist', 'ifCentr')]  # top engineered by MLP
 
 fnames = gbc_shap.iloc[:, :20].columns.str[4:]
+
 
 def sh_dep_plot(feature, shap_values, feature_values, fnames, color):
     shap.dependence_plot(feature,
@@ -348,3 +351,34 @@ for i in list1:
     plt.show()
     plt.close()
 
+"""
+Feature correlation colored by SHAP
+"""
+
+'''
+['MD', 'MaxD', 'VarD', 'MA', 'MP', 'MDist', 'VarDist', 'rVarD',
+ 'rVarDist', 'TD', 'Pers', 'ifFast', 'DistR', 'TDist', 'ifCentr',
+ 'sDist', 'sA', 'sP', 'out2sd', 'out3sd']
+'''
+
+path = 'data/20230317_7a46f7a9_shap_averaged_MLP.csv'
+x_n_shaps = pd.read_csv(path)
+x_n_shaps.columns = x_n_shaps.columns.str[4:]
+x_n_shaps['sum_shap'] = x_n_shaps[['shap_MD', 'shap_MaxD',
+                                   'shap_VarD', 'shap_MA', 'shap_MP', 'shap_MDist', 'shap_VarDist',
+                                   'shap_rVarD', 'shap_rVarDist', 'shap_TD', 'shap_Pers', 'shap_ifFast',
+                                   'shap_DistR', 'shap_TDist', 'shap_ifCentr', 'shap_sDist', 'shap_sA',
+                                   'shap_sP', 'shap_out2sd', 'shap_out3sd']].sum(axis=1)
+
+sns.relplot(data=x_n_shaps,
+            x='MA', y='sA',
+            hue='shap_sA',
+            #alpha=0.9,
+            palette='Spectral',
+            size='shap_sA',
+            sizes=(1, 200),
+            )
+plt.ylim(-0.9,)
+plt.xlim(110, 790)
+plt.show()
+plt.close()
