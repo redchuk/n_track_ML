@@ -466,21 +466,23 @@ data_to_plot.loc[(data_to_plot['time'] == 0), 'time_range_3cat'] = 'serum'
 
 data_to_plot.loc[(data_to_plot['MA'] > 1000), 'MA'] = np.nan  # one huge nucleus
 
-x = 'time_range_3cat'
-y = 'sA'
 
-g = sns.catplot(data=data_to_plot, x=x, y=y, kind='violin', bw=1, inner=None, linewidth=0.25, palette='pastel',
-                order=['serum', '0-20 min', '20-40 min']
-                )
-sns.swarmplot(data=data_to_plot, x=x, y=y, color="k", size=3, ax=g.ax,
-              order=['serum', '0-20 min', '20-40 min'], alpha=0.3)
-sns.pointplot(
-    data=data_to_plot, x=x, y=y,
-    order=['serum', '0-20 min', '20-40 min'],
-    ax=g.ax,
-    color='k'
-)
-plt.title(guide[1])
-plt.tight_layout()
-plt.show()
-plt.close()
+def seaborn_cat(x, y):
+    g = sns.catplot(data=data_to_plot, x=x, y=y, kind='violin', bw=1, inner=None, linewidth=0.25, palette='pastel',
+                    order=['serum', '0-20 min', '20-40 min']
+                    )
+    sns.swarmplot(data=data_to_plot, x=x, y=y, color="k", size=3, ax=g.ax,
+                  order=['serum', '0-20 min', '20-40 min'], alpha=0.3)
+    sns.pointplot(
+        data=data_to_plot, x=x, y=y,
+        order=['serum', '0-20 min', '20-40 min'],
+        ax=g.ax,
+        color='k'
+    )
+    plt.title(guide[1])
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+def dabest_cat():
+    # write here
