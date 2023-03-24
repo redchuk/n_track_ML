@@ -441,10 +441,45 @@ g = sns.jointplot(x="MA", y="sA", data=data_to_plot,
                   hue='serum',
                   ylim=(-1.1, 0.8),
                   xlim=(-70, 900),
-                  alpha =0.5,
+                  alpha=0.5,
                   )
-g.plot_joint(sns.kdeplot, color="r", zorder=0, levels=3, fill = True, alpha =0.3, bw_adjust=1.5,
+g.plot_joint(sns.kdeplot, color="r", zorder=0, levels=3, fill=True, alpha=0.3, bw_adjust=1.5,
              )
+plt.title(guide[1])
+plt.tight_layout()
+plt.show()
+plt.close()
+
+"""
+post-SHAP plotting
+features / time 
+"""
+# use data from previous post-shap feature correlation plot
+
+guide = g_chr1  # chromosome?
+# guide = g_telo
+data_to_plot = data[data['guide'].str.contains(guide[0], regex=True)]  # .dropna()
+
+data_to_plot['time_range_3cat'] = pd.cut(data_to_plot['time'], bins=2, labels=['0-20 min', '20-40 min'])
+data_to_plot['time_range_3cat'].cat.add_categories('serum', inplace=True)
+data_to_plot.loc[(data_to_plot['time'] == 0), 'time_range_3cat'] = 'serum'
+
+data_to_plot.loc[(data_to_plot['MA'] > 1000), 'MA'] = np.nan  # one huge nucleus
+
+x = 'time_range_3cat'
+y = 'sA'
+
+g = sns.catplot(data=data_to_plot, x=x, y=y, kind='violin', bw=1, inner=None, linewidth=0.25, palette='pastel',
+                order=['serum', '0-20 min', '20-40 min']
+                )
+sns.swarmplot(data=data_to_plot, x=x, y=y, color="k", size=3, ax=g.ax,
+              order=['serum', '0-20 min', '20-40 min'], alpha=0.3)
+sns.pointplot(
+    data=data_to_plot, x=x, y=y,
+    order=['serum', '0-20 min', '20-40 min'],
+    ax=g.ax,
+    color='k'
+)
 plt.title(guide[1])
 plt.tight_layout()
 plt.show()
