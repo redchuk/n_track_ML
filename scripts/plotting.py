@@ -381,9 +381,9 @@ post-SHAP plotting
 feature correlation 
 """
 
-data_to_plot = pd.read_csv('data/data_sterile_f67592f.csv')
-data_to_plot['serum'] = (data_to_plot['t_time'] <= 0).astype('int')
-data_to_plot.drop(['Unnamed: 0', 't_serum_conc_percent', 'f_sum_diff_xy_micron'], axis=1, inplace=True)
+data = pd.read_csv('data/data_sterile_f67592f.csv')
+data['serum'] = (data['t_time'] <= 0).astype('int')
+data.drop(['Unnamed: 0', 't_serum_conc_percent', 'f_sum_diff_xy_micron'], axis=1, inplace=True)
 
 canonical_fnames = {'t_guide': 'guide',
                     't_time': 'time',
@@ -406,26 +406,46 @@ canonical_fnames = {'t_guide': 'guide',
                     'f_outliers3SD_diff_xy': 'out3sd',
                     }
 
-data_to_plot.rename(columns=canonical_fnames, inplace=True)
+data.rename(columns=canonical_fnames, inplace=True)
 
-g_chr1 = '1398|1514'
-g_chr10 = '1521|1522'
-g_chr13 = '1403|1404'
-g_chrX = '1406'
-g_telo = '1362'
+g_chr1 = '1398|1514', 'Chr1'
+g_chr10 = '1521|1522', 'Chr10'
+g_chr13 = '1403|1404', 'Chr13'
+g_chrX = '1406', 'ChrX'
+g_telo = '1362', 'Telo'
 
-data_to_plot = data_to_plot[data_to_plot['guide'].str.contains(g_chr1, regex=True)]  # .dropna()
+guide = g_telo  # chromosome?
+data_to_plot = data[data['guide'].str.contains(guide[0], regex=True)]  # .dropna()
+
+#  hue, size
 
 sns.relplot(data=data_to_plot,
-            x='MD', y='MDist',
-            #hue='MA',
-            #alpha=0.9,
-            #palette='Spectral',
-            #size='MA',
-            #sizes=(1, 100),
+            x='MD', y='MDist',  # features to plot?
+            hue='serum',
+            alpha=0.7,
+            # palette='Spectral',
+            size='MA',
+            sizes=(1, 100),
+            # kind='kde', #displot
             )
-#plt.ylim(-0.9,)
-#plt.xlim(110, 790)
+plt.title(guide[1])
+plt.tight_layout()
+# plt.ylim(0,)
+# plt.xlim(0, 0.25)
 plt.show()
 plt.close()
 
+# marginal histograms
+
+g = sns.jointplot(x="MA", y="sA", data=data_to_plot,
+                  hue='serum',
+                  ylim=(-1.1, 0.8),
+                  xlim=(-70, 900),
+                  alpha =0.5,
+                  )
+g.plot_joint(sns.kdeplot, color="r", zorder=0, levels=3, fill = True, alpha =0.3, bw_adjust=1.5,
+             )
+plt.title(guide[1])
+plt.tight_layout()
+plt.show()
+plt.close()
