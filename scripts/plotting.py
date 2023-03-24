@@ -382,6 +382,31 @@ feature correlation
 """
 
 data_to_plot = pd.read_csv('data/data_sterile_f67592f.csv')
+data_to_plot['serum'] = (data_to_plot['t_time'] <= 0).astype('int')
+data_to_plot.drop(['Unnamed: 0', 't_serum_conc_percent', 'f_sum_diff_xy_micron'], axis=1, inplace=True)
+
+canonical_fnames = {'t_guide': 'guide',
+                    't_time': 'time',
+                    'f_mean_diff_xy_micron': 'MD',
+                    'f_max_diff_xy_micron': 'MaxD',
+                    'f_var_diff_xy_micron': 'VarD',
+                    'f_area_micron': 'MA',
+                    'f_perimeter_au_norm': 'MP',
+                    'f_min_dist_micron': 'MDist',
+                    'f_total_displacement': 'TD',
+                    'f_persistence': 'Pers',
+                    'f_fastest_mask': 'ifFast',
+                    'f_min_dist_range': 'DistR',
+                    'f_total_min_dist': 'TDist',
+                    'f_most_central_mask': 'ifCentr',
+                    'f_slope_min_dist_micron': 'sDist',
+                    'f_slope_area_micron': 'sA',
+                    'f_slope_perimeter_au_norm': 'sP',
+                    'f_outliers2SD_diff_xy': 'out2sd',
+                    'f_outliers3SD_diff_xy': 'out3sd',
+                    }
+
+data_to_plot.rename(columns=canonical_fnames, inplace=True)
 
 g_chr1 = '1398|1514'
 g_chr10 = '1521|1522'
@@ -389,19 +414,8 @@ g_chr13 = '1403|1404'
 g_chrX = '1406'
 g_telo = '1362'
 
-data_to_plot = data_to_plot[data_to_plot['t_guide'].str.contains(g_chr1, regex=True)]  # .dropna()
+data_to_plot = data_to_plot[data_to_plot['guide'].str.contains(g_chr1, regex=True)]  # .dropna()
 
-canonical_fnames = {'diff_xy_micron': 'D',  # Locus displacement, microns
-                    'area_micron': 'A',  # Nuclear area, square microns
-                    'perimeter_au_norm': 'P',  # Nuclear perimeter, arbitrary units
-                    'min_dist_micron': 'Dist',  # Minimal distance from locus to nuclear rim, microns
-                    }
-
-# next
-data_to_plot.rename(columns=canonical_fnames, inplace=True)
-
-# next
-'''
 sns.relplot(data=data_to_plot,
             x='MD', y='MDist',
             #hue='MA',
@@ -415,4 +429,3 @@ sns.relplot(data=data_to_plot,
 plt.show()
 plt.close()
 
-'''
