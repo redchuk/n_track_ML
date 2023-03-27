@@ -414,7 +414,7 @@ g_chr13 = '1403|1404', 'Chr13'
 g_chrX = '1406', 'ChrX'
 g_telo = '1362', 'Telo'
 
-guide = g_telo  # chromosome?
+guide = g_chr1  # chromosome?
 data_to_plot = data[data['guide'].str.contains(guide[0], regex=True)]  # .dropna()
 
 #  hue, size
@@ -460,6 +460,8 @@ guide = g_chr1  # chromosome?
 # guide = g_telo
 data_to_plot = data[data['guide'].str.contains(guide[0], regex=True)]  # .dropna()
 
+import numpy as np
+
 data_to_plot['time_range_3cat'] = pd.cut(data_to_plot['time'], bins=2, labels=['0-20 min', '20-40 min'])
 data_to_plot['time_range_3cat'].cat.add_categories('serum', inplace=True)
 data_to_plot.loc[(data_to_plot['time'] == 0), 'time_range_3cat'] = 'serum'
@@ -484,5 +486,28 @@ def seaborn_cat(x, y):
     plt.show()
     plt.close()
 
-def dabest_cat():
-    # write here
+
+# seaborn_cat('time_range_3cat', 'TD')
+
+list = ['MD', 'TD', 'MDist', 'TDist', 'sDist', 'Pers']
+list_morph = ['MA', 'sA']
+
+def dabest_cat(data, y, morph=False):
+    if morph:
+        data = data.groupby('file').agg('first')
+    long_df = dabest.load(data,
+                          idx=('serum', '0-20 min', '20-40 min'),
+                          x='time_range_3cat', y=y)
+
+    f, axx = plt.subplots(nrows=1, ncols=1,
+                          figsize=(7, 6),
+                          gridspec_kw={'wspace': 0.15}  # ensure proper width-wise spacing.
+                          )
+
+    long_df.mean_diff.plot(raw_marker_size=3, es_marker_size=7, custom_palette='viridis', ax=axx)
+    plt.title(guide[1])
+    plt.show()
+    plt.close()
+
+
+dabest_cat(data_to_plot, y='MD', morph=False)
