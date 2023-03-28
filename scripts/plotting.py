@@ -492,6 +492,7 @@ def seaborn_cat(x, y):
 list = ['MD', 'TD', 'MDist', 'TDist', 'sDist', 'Pers']
 list_morph = ['MA', 'sA']
 
+
 def dabest_cat(data, y, morph=False):
     if morph:
         data = data.groupby('file').agg('first')
@@ -511,3 +512,28 @@ def dabest_cat(data, y, morph=False):
 
 
 dabest_cat(data_to_plot, y='MD', morph=False)
+
+"""
+post-SHAP plotting, two categorical comparison
+ifFast / ifCentr  
+"""
+# use data from previous post-shap feature correlation plot
+# alternative:
+# https://stackoverflow.com/questions/51272304/how-to-create-a-categorical-bubble-plot-in-python
+
+guide = g_chr1  # chromosome?
+data_to_plot = data[data['guide'].str.contains(guide[0], regex=True)]  # .dropna()
+data_to_plot[['slow', 'fast']] = pd.get_dummies(data_to_plot['ifFast'])
+data_to_plot = data_to_plot[data_to_plot['serum'] == 1]
+
+balloon = data_to_plot.groupby('ifCentr').agg(fast=('fast', 'sum'),
+                                              slow=('slow', 'sum'),
+                                              )
+
+balloon_p = pd.DataFrame()
+balloon_p['fast_p'] = balloon['fast'] / (balloon.sum(axis=1))
+balloon_p['slow_p'] = balloon['slow'] / (balloon.sum(axis=1))
+
+balloon_p.plot(kind='bar', stacked=True, figsize=(4, 4))
+plt.show()
+plt.close()
