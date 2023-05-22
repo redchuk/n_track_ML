@@ -89,8 +89,11 @@ def paired_comp(grouped, groups_to_plot, parameter):
                                                 groups_to_plot[1]),
                                     paired=True, id_col='dot')
     two_groups_paired.mean_diff.plot(raw_marker_size=3, es_marker_size=5)
-    plt.show()
-    plt.close()
+    #set resolution for saving
+    plt.savefig('scripts/plotting_output/paired_' + parameter + '.png', dpi=600)
+
+    #plt.show()
+    #plt.close()
 
 #    print(combo)
 
