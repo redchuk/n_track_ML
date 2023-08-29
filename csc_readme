@@ -1,0 +1,16 @@
+my.csc.fi
+Puhti login https://www.puhti.csc.fi/public/welcome.html
+jupyter from here, use 10GB memory
+
+Puhti via PuTTY (to login node)
+Host: puhti.csc.fi
+login: redchukt
+
+
+/scratch/tanhuanp/n_track_ML
+
+hajaalin fork
+path to shap for the last run (best adam)
+20 reps:
+drwxrws--- 3 hajaalin tanhuanp 4096 Aug 24 16:23 shap_best_adam_all_20230824b
+scripts/tsc/shap_2023_CSC_best_adam.ipynb
