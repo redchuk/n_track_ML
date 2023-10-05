@@ -8,7 +8,7 @@ tar
 -xvf # extract verbose file
 /wrk-vakka/group/lmu/projects/n_track_ML/output/output.tgz  # path to tar archive
 
-# exact filename, got it using tar -tvf /wrk-vakka/group/lmu/projects/n_track_ML/output/output.tgz | grep 202307141240.csv
+# exact filename, got it using tar -tf /wrk-vakka/group/lmu/projects/n_track_ML/output/output.tgz | grep 202307141241.csv > temp_best_adam_list2
 proj/hajaalin/Projects/n_track_ML/output/cross-validation/k3_14_28_depth1_nobn_adam00001b_all_20230714/202307141240/cv_k3_14_28_depth1_nobn_adam00001b_all_20230714_k3_14_28_e67_202307141240.csv
 
 --strip-components 7 # remove 7 leading components from file name (folder structure)
