@@ -1,7 +1,7 @@
 
 ##########################################################################################
 extracting the best adam data from tar archive
-
+single file:
 in one line:
 
 tar
@@ -13,6 +13,13 @@ proj/hajaalin/Projects/n_track_ML/output/cross-validation/k3_14_28_depth1_nobn_a
 
 --strip-components 7 # remove 7 leading components from file name (folder structure)
 
+##########################################################################################
+extract files from a list:
+
+while read -r line
+do
+tar -xvf /wrk-vakka/group/lmu/projects/n_track_ML/output/output.tgz $line --strip-components 7
+done < temp_best_adam_list2
 
 ##########################################################################################
 
