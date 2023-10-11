@@ -323,9 +323,9 @@ plt.show()
 path = 'data/20230321_7a46f7a9_shap_averaged_GBC.csv'
 gbc_shap = pd.read_csv(path)
 
-# list1 = [('MD', 'MA'), ('MDist', 'MA'), ('MA', 'MD'), ('Pers', 'MA')]
+list1 = [('MD', 'MA'), ('MDist', 'MA'), ('MA', 'MD'), ('Pers', 'MA')]
 # list1 = [('MD', 'Pers'), ('MDist', 'sDist'), ('MA', 'rVarD'), ('Pers', 'out3sd')]
-list1 = [('sA', 'ifCentr'), ('sDist', 'ifCentr'), ('TDist', 'ifCentr'), ('sDist', 'ifCentr')]  # top engineered by MLP
+# list1 = [('sA', 'ifCentr'), ('sDist', 'ifCentr'), ('TDist', 'ifCentr'), ('sDist', 'ifCentr')]  # top engineered by MLP
 
 fnames = gbc_shap.iloc[:, :20].columns.str[4:]
 
@@ -344,6 +344,8 @@ def sh_dep_plot(feature, shap_values, feature_values, fnames, color):
 for i in list1:
     sh_dep_plot(i[0], gbc_shap.iloc[:, 20:].to_numpy(), gbc_shap.iloc[:, :20].to_numpy(), fnames, i[1])
     rcParams['figure.dpi'] = 200
+    plt.xlim(110, 790)
+    plt.ylim(-10.5, 10.55)
     plt.title(path.split('/')[1].split('.')[0])
     plt.gcf().set_size_inches(6, 4)
     plt.show()
@@ -524,7 +526,7 @@ ifFast / ifCentr
 guide = g_chr1  # chromosome?
 data_to_plot = data[data['guide'].str.contains(guide[0], regex=True)]  # .dropna()
 data_to_plot[['slow', 'fast']] = pd.get_dummies(data_to_plot['ifFast'])
-data_to_plot = data_to_plot[data_to_plot['serum'] == 1]
+data_to_plot = data_to_plot[data_to_plot['t_serum_conc_percent'] > 1]  # > or <
 
 balloon = data_to_plot.groupby('ifCentr').agg(fast=('fast', 'sum'),
                                               slow=('slow', 'sum'),
@@ -534,6 +536,6 @@ balloon_p = pd.DataFrame()
 balloon_p['fast_p'] = balloon['fast'] / (balloon.sum(axis=1))
 balloon_p['slow_p'] = balloon['slow'] / (balloon.sum(axis=1))
 
-balloon_p.plot(kind='bar', stacked=True, figsize=(4, 4))
+balloon_p.plot(kind='bar', stacked=True, figsize=(4, 4)) # legend = False
 plt.show()
 plt.close()
